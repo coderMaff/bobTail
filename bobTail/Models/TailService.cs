@@ -1,107 +1,162 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace bobTail.Models;
 
 public class TailService
 {
-    private const int ChunkSize = 8192;
+    private readonly ConcurrentDictionary<string, long> _offsets = new();
 
-    public async IAsyncEnumerable<string> TailFile(string path)
+    public IEnumerable<string> LoadLastLines(string path, int maxLines)
     {
-        using var fs = new FileStream(
-            path,
-            FileMode.Open,
-            FileAccess.Read,
-            FileShare.ReadWrite | FileShare.Delete);
+        if (!File.Exists(path))
+            yield break;
 
+        const int chunkSize = 4096;
+        var fileInfo = new FileInfo(path);
+        var length = fileInfo.Length;
+        var buffer = new byte[chunkSize];
+        var lines = new List<string>();
+        var sb = new StringBuilder();
+
+        using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+
+        long position = length;
+        while (position > 0 && lines.Count < maxLines)
+        {
+            int toRead = (int)Math.Min(chunkSize, position);
+            position -= toRead;
+            fs.Seek(position, SeekOrigin.Begin);
+            fs.Read(buffer, 0, toRead);
+
+            for (int i = toRead - 1; i >= 0; i--)
+            {
+                char c = (char)buffer[i];
+                if (c == '\n')
+                {
+                    if (sb.Length > 0)
+                    {
+                        var line = ReverseString(sb.ToString());
+                        lines.Add(line);
+                        sb.Clear();
+                        if (lines.Count >= maxLines)
+                            break;
+                    }
+                }
+                else
+                {
+                    sb.Append(c);
+                }
+            }
+        }
+
+        if (sb.Length > 0 && lines.Count < maxLines)
+        {
+            var line = ReverseString(sb.ToString());
+            lines.Add(line);
+        }
+
+        lines.Reverse();
+        foreach (var line in lines)
+            yield return line;
+    }
+
+    private static string ReverseString(string s)
+    {
+        var arr = s.ToCharArray();
+        Array.Reverse(arr);
+        return new string(arr);
+    }
+
+    public IEnumerable<string> ReadPreviousChunk(string path, ref long offset, int maxLines = 200)
+    {
+        if (!File.Exists(path) || offset <= 0)
+            return Array.Empty<string>();
+
+        const int chunkSize = 4096;
+        var buffer = new byte[chunkSize];
+        var lines = new List<string>();
+        var sb = new StringBuilder();
+
+        using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+
+        long position = offset;
+        while (position > 0 && lines.Count < maxLines)
+        {
+            int toRead = (int)Math.Min(chunkSize, position);
+            position -= toRead;
+            fs.Seek(position, SeekOrigin.Begin);
+            fs.Read(buffer, 0, toRead);
+
+            for (int i = toRead - 1; i >= 0; i--)
+            {
+                char c = (char)buffer[i];
+                if (c == '\n')
+                {
+                    if (sb.Length > 0)
+                    {
+                        var line = ReverseString(sb.ToString());
+                        lines.Add(line);
+                        sb.Clear();
+                        if (lines.Count >= maxLines)
+                            break;
+                    }
+                }
+                else
+                {
+                    sb.Append(c);
+                }
+            }
+        }
+
+        if (sb.Length > 0 && lines.Count < maxLines)
+        {
+            var line = ReverseString(sb.ToString());
+            lines.Add(line);
+        }
+
+        lines.Reverse();
+        offset = position;
+        return lines;
+    }
+
+    public async IAsyncEnumerable<string> TailFile(
+        string path,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        if (!File.Exists(path))
+            yield break;
+
+        long offset = _offsets.GetOrAdd(path, _ =>
+        {
+            var info = new FileInfo(path);
+            return info.Exists ? info.Length : 0;
+        });
+
+        using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        fs.Seek(offset, SeekOrigin.Begin);
         using var reader = new StreamReader(fs, Encoding.UTF8);
 
-        fs.Seek(0, SeekOrigin.End);
-
-        while (true)
+        while (!cancellationToken.IsCancellationRequested)
         {
-            string? line = await reader.ReadLineAsync();
-
+            var line = await reader.ReadLineAsync();
             if (line != null)
-                yield return line;
-            else
-                await Task.Delay(150);
-        }
-    }
-
-    public List<string> LoadLastLines(string path, int maxLines)
-    {
-        var result = new List<string>();
-
-        using var fs = new FileStream(
-            path,
-            FileMode.Open,
-            FileAccess.Read,
-            FileShare.ReadWrite | FileShare.Delete);
-
-        long offset = fs.Length;
-        var buffer = new List<string>();
-
-        while (offset > 0 && buffer.Count < maxLines)
-        {
-            long readSize = Math.Min(ChunkSize, offset);
-            long newOffset = offset - readSize;
-
-            fs.Seek(newOffset, SeekOrigin.Begin);
-
-            byte[] chunk = new byte[readSize];
-            fs.ReadExactly(chunk, 0, (int)readSize);
-
-            string text = Encoding.UTF8.GetString(chunk);
-            var lines = text.Split('\n', StringSplitOptions.None);
-
-            for (int i = lines.Length - 1; i >= 0; i--)
             {
-                if (buffer.Count >= maxLines)
-                    break;
-
-                if (!string.IsNullOrWhiteSpace(lines[i]))
-                    buffer.Add(lines[i]);
+                offset = fs.Position;
+                _offsets[path] = offset;
+                yield return line;
             }
-
-            offset = newOffset;
+            else
+            {
+                await Task.Delay(50, cancellationToken);
+                fs.Seek(offset, SeekOrigin.Begin);
+            }
         }
-
-        buffer.Reverse();
-        return buffer;
-    }
-
-    public List<string> ReadPreviousChunk(string path, ref long offset)
-    {
-        var result = new List<string>();
-
-        using var fs = new FileStream(
-            path,
-            FileMode.Open,
-            FileAccess.Read,
-            FileShare.ReadWrite | FileShare.Delete);
-
-        if (offset <= 0)
-            return result;
-
-        long readSize = Math.Min(ChunkSize, offset);
-        long newOffset = offset - readSize;
-
-        fs.Seek(newOffset, SeekOrigin.Begin);
-
-        byte[] buffer = new byte[readSize];
-        fs.ReadExactly(buffer, 0, (int)readSize);
-
-        offset = newOffset;
-
-        string chunk = Encoding.UTF8.GetString(buffer);
-        var lines = chunk.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-
-        result.AddRange(lines);
-        return result;
     }
 }

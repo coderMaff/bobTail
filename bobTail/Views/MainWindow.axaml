@@ -5,25 +5,33 @@
         x:Class="bobTail.Views.MainWindow"
         Background="HotPink">
 
-    <!-- GLOBAL STYLES -->
     <Window.Styles>
 
-        <!-- Remove padding/margin from ListBox items -->
         <Style Selector="ListBoxItem">
             <Setter Property="Padding" Value="0" />
             <Setter Property="Margin" Value="0" />
             <Setter Property="MinHeight" Value="0" />
         </Style>
 
-        <!-- Remove padding/margin from text inside ListBox -->
         <Style Selector="ListBox TextBlock">
             <Setter Property="Margin" Value="0" />
             <Setter Property="Padding" Value="0" />
         </Style>
 
-        <!-- UNREAD TAB TEXT STYLE -->
+        <!-- Unread tab text -->
         <Style Selector="TabControl TextBlock.unread">
             <Setter Property="Foreground" Value="Lime" />
+        </Style>
+
+        <!-- Tail toggle visual -->
+        <Style Selector="ToggleButton.tailOn">
+            <Setter Property="Background" Value="LimeGreen" />
+            <Setter Property="Foreground" Value="Black" />
+        </Style>
+
+        <!-- Tighter tab header padding -->
+        <Style Selector="TabItem">
+            <Setter Property="Padding" Value="4,2" />
         </Style>
 
     </Window.Styles>
@@ -34,7 +42,6 @@
 
     <DockPanel LastChildFill="True" Margin="10">
 
-        <!-- Top buttons -->
         <StackPanel DockPanel.Dock="Top"
                     Orientation="Horizontal"
                     Spacing="10">
@@ -47,11 +54,9 @@
                     Click="SettingsButton_OnClick" />
         </StackPanel>
 
-        <!-- TAB CONTROL -->
         <TabControl ItemsSource="{Binding Tabs}"
                     SelectedItem="{Binding SelectedTab}">
 
-            <!-- TAB HEADER TEMPLATE -->
             <TabControl.ItemTemplate>
                 <DataTemplate DataType="vm:LogTabViewModel">
                     <StackPanel Orientation="Horizontal" Spacing="6">
@@ -59,12 +64,11 @@
                         <material:MaterialIcon Kind="{Binding IconKind, FallbackValue=FileDocumentOutline}"
                                                Width="16" Height="16" />
 
-                        <!-- Title with unread class -->
                         <TextBlock Text="{Binding Title}"
                                    Classes.unread="{Binding HasUnread}" />
 
-                        <!-- Tail toggle -->
                         <ToggleButton IsChecked="{Binding AutoScroll}"
+                                      Classes.tailOn="{Binding AutoScroll}"
                                       Width="18"
                                       Height="18"
                                       Margin="4,0,0,0"
@@ -74,7 +78,6 @@
                                                    Height="14" />
                         </ToggleButton>
 
-                        <!-- Close button -->
                         <Button Content="×"
                                 Margin="6,0,0,0"
                                 Padding="0"
@@ -86,7 +89,6 @@
                 </DataTemplate>
             </TabControl.ItemTemplate>
 
-            <!-- TAB CONTENT TEMPLATE -->
             <TabControl.ContentTemplate>
                 <DataTemplate DataType="vm:LogTabViewModel">
                     <ListBox ItemsSource="{Binding Lines}"

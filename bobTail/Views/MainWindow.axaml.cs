@@ -1,7 +1,9 @@
-using System;
 using System.IO;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
@@ -13,6 +15,7 @@ namespace bobTail.Views;
 public partial class MainWindow : Window
 {
     private readonly TailService _tailService = new();
+    private readonly CancellationTokenSource _cts = new();
 
     public MainWindow()
     {
@@ -21,8 +24,8 @@ public partial class MainWindow : Window
         var state = StateService.LoadState();
         if (state != null)
         {
-            Vm.DefaultTailEnabled = state.Value.defaultTail;
             Vm.DebugTabVisible = state.Value.debugVisible;
+            Vm.DefaultTailEnabled = state.Value.defaultTail;
 
             foreach (var file in state.Value.files)
                 _ = CreateLogTabAsync(file);
@@ -35,15 +38,16 @@ public partial class MainWindow : Window
     }
 
     private MainWindowViewModel Vm => (MainWindowViewModel)DataContext!;
+
     private async void OpenFileButton_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (this.StorageProvider == null)
+        if (StorageProvider == null)
         {
             AppendDebug("[ERROR] StorageProvider not available.");
             return;
         }
 
-        var result = await this.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        var result = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
             Title = "Open log file",
             AllowMultiple = false
@@ -70,39 +74,40 @@ public partial class MainWindow : Window
         await CreateLogTabAsync(path);
     }
 
-
     private async Task CreateLogTabAsync(string path)
     {
         var info = new FileInfo(path);
+        var initialSize = info.Exists ? info.Length : 0;
 
         var tab = new LogTabViewModel
         {
             FilePath = path,
             Title = Path.GetFileName(path),
             IconKind = Material.Icons.MaterialIconKind.FileDocumentOutline,
-            ReadOffset = info.Exists ? info.Length : 0,
+            ReadOffset = initialSize,
             AutoScroll = Vm.DefaultTailEnabled
         };
+
+        // Load last lines
+        var lastLines = _tailService.LoadLastLines(path, 2000).ToList();
+        foreach (var line in lastLines)
+            tab.Lines.Add(line);
 
         Vm.Tabs.Add(tab);
         Vm.SelectedTab = tab;
 
         AppendDebug($"[DEBUG] Opened file: {path}");
-        AppendDebug($"[DEBUG] Initial size: {tab.ReadOffset}");
+        AppendDebug($"[DEBUG] Initial size: {initialSize}");
 
-        var lastLines = _tailService.LoadLastLines(path, 2000);
-        foreach (var line in lastLines)
-            tab.Lines.Add(line);
-
-        _ = Task.Run(() => TailLoopAsync(tab));
+        _ = Task.Run(() => TailLoopAsync(tab, _cts.Token));
     }
 
-    private async Task TailLoopAsync(LogTabViewModel tab)
+    private async Task TailLoopAsync(LogTabViewModel tab, CancellationToken token)
     {
         if (tab.FilePath == null)
             return;
 
-        await foreach (var line in _tailService.TailFile(tab.FilePath))
+        await foreach (var line in _tailService.TailFile(tab.FilePath, token))
         {
             var captured = line;
 
@@ -113,16 +118,8 @@ public partial class MainWindow : Window
                     tab.Lines.RemoveAt(0);
 
                 if (Vm.SelectedTab != tab && !tab.AutoScroll)
-                {
                     tab.HasUnread = true;
-                }
-
-                if (tab.AutoScroll && Vm.SelectedTab == tab)
-                {
-                    // Auto-scroll handled by ListBox ScrollIntoView if needed
-                    // You can wire this up via a behavior if you want it perfect
-                }
-            });
+            }, DispatcherPriority.Background);
         }
     }
 
@@ -136,7 +133,7 @@ public partial class MainWindow : Window
 
         tab.AutoScroll = sv.Offset.Y >= sv.Extent.Height - sv.Viewport.Height - 5;
 
-        if (tab.FilePath == null || tab.ReadOffset < 0)
+        if (tab.FilePath == null || tab.ReadOffset <= 0)
             return;
 
         if (sv.Offset.Y < 20)
@@ -149,7 +146,7 @@ public partial class MainWindow : Window
             return;
 
         var offset = tab.ReadOffset;
-        var older = _tailService.ReadPreviousChunk(tab.FilePath, ref offset);
+        var older = _tailService.ReadPreviousChunk(tab.FilePath, ref offset).ToList();
         tab.ReadOffset = offset;
 
         if (older.Count == 0)
@@ -198,6 +195,8 @@ public partial class MainWindow : Window
     protected override void OnClosing(WindowClosingEventArgs e)
     {
         base.OnClosing(e);
+
+        _cts.Cancel();
 
         StateService.SaveState(
             Vm.Tabs,

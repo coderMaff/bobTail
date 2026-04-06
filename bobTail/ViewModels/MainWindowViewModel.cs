@@ -14,9 +14,12 @@ public class MainWindowViewModel : ViewModelBase
         get => _selectedTab;
         set
         {
-            this.RaiseAndSetIfChanged(ref _selectedTab, value);
-            if (value != null)
-                value.HasUnread = false;
+            if (value != _selectedTab)
+            {
+                this.RaiseAndSetIfChanged(ref _selectedTab, value);
+                if (value != null)
+                    value.HasUnread = false;
+            }
         }
     }
 
