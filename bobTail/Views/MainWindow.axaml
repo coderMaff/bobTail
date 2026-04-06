@@ -5,8 +5,9 @@
         x:Class="bobTail.Views.MainWindow"
         Background="HotPink">
 
-    <!-- GLOBAL STYLES (fix double spacing safely) -->
+    <!-- GLOBAL STYLES -->
     <Window.Styles>
+
         <!-- Remove padding/margin from ListBox items -->
         <Style Selector="ListBoxItem">
             <Setter Property="Padding" Value="0" />
@@ -19,6 +20,12 @@
             <Setter Property="Margin" Value="0" />
             <Setter Property="Padding" Value="0" />
         </Style>
+
+        <!-- UNREAD TAB TEXT STYLE -->
+        <Style Selector="TabControl TextBlock.unread">
+            <Setter Property="Foreground" Value="Lime" />
+        </Style>
+
     </Window.Styles>
 
     <Window.DataContext>
@@ -49,13 +56,25 @@
                 <DataTemplate DataType="vm:LogTabViewModel">
                     <StackPanel Orientation="Horizontal" Spacing="6">
 
-                        <!-- Material Icon with fallback -->
                         <material:MaterialIcon Kind="{Binding IconKind, FallbackValue=FileDocumentOutline}"
                                                Width="16" Height="16" />
 
-                        <TextBlock Text="{Binding Title}" />
+                        <!-- Title with unread class -->
+                        <TextBlock Text="{Binding Title}"
+                                   Classes.unread="{Binding HasUnread}" />
 
-                        <!-- Close button wrapped safely -->
+                        <!-- Tail toggle -->
+                        <ToggleButton IsChecked="{Binding AutoScroll}"
+                                      Width="18"
+                                      Height="18"
+                                      Margin="4,0,0,0"
+                                      ToolTip.Tip="Tail (auto-scroll)">
+                            <material:MaterialIcon Kind="ArrowDownBold"
+                                                   Width="14"
+                                                   Height="14" />
+                        </ToggleButton>
+
+                        <!-- Close button -->
                         <Button Content="×"
                                 Margin="6,0,0,0"
                                 Padding="0"
@@ -70,13 +89,10 @@
             <!-- TAB CONTENT TEMPLATE -->
             <TabControl.ContentTemplate>
                 <DataTemplate DataType="vm:LogTabViewModel">
-
-                    <!-- ListBox WITHOUT Name attribute -->
                     <ListBox ItemsSource="{Binding Lines}"
                              FontFamily="Consolas"
                              Background="DeepSkyBlue"
                              ScrollViewer.ScrollChanged="LogList_OnScrollChanged" />
-
                 </DataTemplate>
             </TabControl.ContentTemplate>
 

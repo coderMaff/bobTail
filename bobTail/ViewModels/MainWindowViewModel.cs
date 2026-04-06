@@ -12,7 +12,12 @@ public class MainWindowViewModel : ViewModelBase
     public LogTabViewModel? SelectedTab
     {
         get => _selectedTab;
-        set => this.RaiseAndSetIfChanged(ref _selectedTab, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _selectedTab, value);
+            if (value != null)
+                value.HasUnread = false;
+        }
     }
 
     public LogTabViewModel DebugTab { get; }
@@ -23,7 +28,8 @@ public class MainWindowViewModel : ViewModelBase
         {
             Title = "Debug",
             IsDebug = true,
-            IconKind = MaterialIconKind.BugOutline
+            IconKind = MaterialIconKind.BugOutline,
+            AutoScroll = true
         };
 
         Tabs.Add(DebugTab);
@@ -41,6 +47,13 @@ public class MainWindowViewModel : ViewModelBase
         }
     }
 
+    private bool _defaultTailEnabled = true;
+    public bool DefaultTailEnabled
+    {
+        get => _defaultTailEnabled;
+        set => this.RaiseAndSetIfChanged(ref _defaultTailEnabled, value);
+    }
+
     private void UpdateDebugTabVisibility()
     {
         if (DebugTabVisible)
@@ -54,5 +67,4 @@ public class MainWindowViewModel : ViewModelBase
                 Tabs.Remove(DebugTab);
         }
     }
-
 }

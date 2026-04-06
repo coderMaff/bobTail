@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text.Json;
 using bobTail.ViewModels;
 
+namespace bobTail.Models;
+
 public static class StateService
 {
     private static string StatePath =>
@@ -13,7 +15,10 @@ public static class StateService
             "bobTail",
             "open_logs.json");
 
-    public static void SaveState(IEnumerable<LogTabViewModel> tabs, bool debugVisible)
+    public static void SaveState(
+        IEnumerable<LogTabViewModel> tabs,
+        bool debugVisible,
+        bool defaultTail)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(StatePath)!);
 
@@ -21,15 +26,16 @@ public static class StateService
         {
             openFiles = tabs
                 .Where(t => !t.IsDebug && t.FilePath != null)
-                .Select(t => t.FilePath)
+                .Select(t => t.FilePath!)
                 .ToList(),
-            debugVisible = debugVisible
+            debugVisible,
+            defaultTail
         };
 
         File.WriteAllText(StatePath, JsonSerializer.Serialize(state));
     }
 
-    public static (List<string> files, bool debugVisible)? LoadState()
+    public static (List<string> files, bool debugVisible, bool defaultTail)? LoadState()
     {
         if (!File.Exists(StatePath))
             return null;
@@ -37,12 +43,13 @@ public static class StateService
         var json = File.ReadAllText(StatePath);
         var state = JsonSerializer.Deserialize<StateModel>(json);
 
-        return (state!.openFiles, state.debugVisible);
+        return (state!.openFiles, state.debugVisible, state.defaultTail);
     }
 
     private class StateModel
     {
         public List<string> openFiles { get; set; } = new();
         public bool debugVisible { get; set; }
+        public bool defaultTail { get; set; } = true;
     }
 }

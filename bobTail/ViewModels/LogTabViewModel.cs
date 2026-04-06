@@ -1,23 +1,59 @@
 using System.Collections.ObjectModel;
 using Material.Icons;
+using ReactiveUI;
 
 namespace bobTail.ViewModels;
 
 public class LogTabViewModel : ViewModelBase
 {
-    public string Title { get; set; } = string.Empty;
-    public string? FilePath { get; set; }
-    public bool IsDebug { get; set; }
-    public MaterialIconKind IconKind { get; set; }
+    private string _title = string.Empty;
+    public string Title
+    {
+        get => _title;
+        set => this.RaiseAndSetIfChanged(ref _title, value);
+    }
 
     public ObservableCollection<string> Lines { get; } = new();
 
-    private long _readOffset = -1;
+    private string? _filePath;
+    public string? FilePath
+    {
+        get => _filePath;
+        set => this.RaiseAndSetIfChanged(ref _filePath, value);
+    }
+
+    private MaterialIconKind _iconKind = MaterialIconKind.FileDocumentOutline;
+    public MaterialIconKind IconKind
+    {
+        get => _iconKind;
+        set => this.RaiseAndSetIfChanged(ref _iconKind, value);
+    }
+
+    private bool _isDebug;
+    public bool IsDebug
+    {
+        get => _isDebug;
+        set => this.RaiseAndSetIfChanged(ref _isDebug, value);
+    }
+
+    private bool _autoScroll = true;
+    public bool AutoScroll
+    {
+        get => _autoScroll;
+        set => this.RaiseAndSetIfChanged(ref _autoScroll, value);
+    }
+
+    private long _readOffset;
     public long ReadOffset
     {
         get => _readOffset;
-        set => _readOffset = value;
+        set => this.RaiseAndSetIfChanged(ref _readOffset, value);
     }
 
-    public bool AutoScroll { get; set; } = true;
+    private bool _hasUnread;
+    public bool HasUnread
+    {
+        get => _hasUnread;
+        set => this.RaiseAndSetIfChanged(ref _hasUnread, value);
+    }
 }

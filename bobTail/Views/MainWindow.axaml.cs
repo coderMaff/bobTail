@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using bobTail.Models;
 using bobTail.ViewModels;
@@ -16,36 +17,50 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+
         var state = StateService.LoadState();
         if (state != null)
         {
+            Vm.DefaultTailEnabled = state.Value.defaultTail;
+            Vm.DebugTabVisible = state.Value.debugVisible;
+
             foreach (var file in state.Value.files)
                 _ = CreateLogTabAsync(file);
-
-            Vm.DebugTabVisible = state.Value.debugVisible;
         }
         else
         {
-            Vm.DebugTabVisible = true; // default during development
+            Vm.DebugTabVisible = true;
+            Vm.DefaultTailEnabled = true;
         }
-
     }
 
     private MainWindowViewModel Vm => (MainWindowViewModel)DataContext!;
-
     private async void OpenFileButton_OnClick(object? sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFileDialog
+        if (this.StorageProvider == null)
         {
-            AllowMultiple = false,
-            Title = "Open log file"
-        };
+            AppendDebug("[ERROR] StorageProvider not available.");
+            return;
+        }
 
-        var result = await dialog.ShowAsync(this);
-        if (result == null || result.Length == 0)
+        var result = await this.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Open log file",
+            AllowMultiple = false
+        });
+
+        if (result == null || result.Count == 0)
             return;
 
-        var path = result[0];
+        var file = result[0];
+        var path = file.TryGetLocalPath();
+
+        if (path == null)
+        {
+            AppendDebug("[ERROR] Unable to resolve local file path.");
+            return;
+        }
+
         if (!File.Exists(path))
         {
             AppendDebug($"[ERROR] File does not exist: {path}");
@@ -55,14 +70,18 @@ public partial class MainWindow : Window
         await CreateLogTabAsync(path);
     }
 
+
     private async Task CreateLogTabAsync(string path)
     {
+        var info = new FileInfo(path);
+
         var tab = new LogTabViewModel
         {
             FilePath = path,
             Title = Path.GetFileName(path),
             IconKind = Material.Icons.MaterialIconKind.FileDocumentOutline,
-            ReadOffset = new FileInfo(path).Length
+            ReadOffset = info.Exists ? info.Length : 0,
+            AutoScroll = Vm.DefaultTailEnabled
         };
 
         Vm.Tabs.Add(tab);
@@ -71,12 +90,10 @@ public partial class MainWindow : Window
         AppendDebug($"[DEBUG] Opened file: {path}");
         AppendDebug($"[DEBUG] Initial size: {tab.ReadOffset}");
 
-        // Load last lines
         var lastLines = _tailService.LoadLastLines(path, 2000);
         foreach (var line in lastLines)
             tab.Lines.Add(line);
 
-        // Start tailing
         _ = Task.Run(() => TailLoopAsync(tab));
     }
 
@@ -92,18 +109,18 @@ public partial class MainWindow : Window
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 tab.Lines.Add(captured);
-
                 if (tab.Lines.Count > 2000)
                     tab.Lines.RemoveAt(0);
 
+                if (Vm.SelectedTab != tab && !tab.AutoScroll)
+                {
+                    tab.HasUnread = true;
+                }
+
                 if (tab.AutoScroll && Vm.SelectedTab == tab)
                 {
-                    // Find the ListBox in the current tab's visual tree
-                    if (this.FindControl<TabControl>("") is { } tc &&
-                        tc.SelectedContent is ListBox lb)
-                    {
-                        lb.ScrollIntoView(tab.Lines[^1]);
-                    }
+                    // Auto-scroll handled by ListBox ScrollIntoView if needed
+                    // You can wire this up via a behavior if you want it perfect
                 }
             });
         }
@@ -147,8 +164,10 @@ public partial class MainWindow : Window
 
     private void CloseTab_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (sender is not Button btn) return;
-        if (btn.CommandParameter is not LogTabViewModel tab) return;
+        if (sender is not Button btn)
+            return;
+        if (btn.CommandParameter is not LogTabViewModel tab)
+            return;
 
         if (tab.IsDebug)
         {
@@ -159,10 +178,16 @@ public partial class MainWindow : Window
         Vm.Tabs.Remove(tab);
     }
 
-
     private void SettingsButton_OnClick(object? sender, RoutedEventArgs e)
     {
-        AppendDebug("[DEBUG] Settings clicked (not implemented yet).");
+        var settings = new SettingsWindow
+        {
+            DataContext = DataContext,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+
+        settings.Show(this);
+        AppendDebug("[DEBUG] Settings window opened.");
     }
 
     private void AppendDebug(string message)
@@ -176,8 +201,8 @@ public partial class MainWindow : Window
 
         StateService.SaveState(
             Vm.Tabs,
-            Vm.DebugTabVisible
+            Vm.DebugTabVisible,
+            Vm.DefaultTailEnabled
         );
     }
-
 }
