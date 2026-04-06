@@ -1,0 +1,87 @@
+{
+  "project_name": "bobTail",
+  "project_type": "Avalonia-based multi-tab log viewer",
+  "language": "C# (.NET 8/10)",
+  "user": "Matt",
+  "goals": [
+    "Create a robust, multi-tab log viewer using Avalonia UI",
+    "Support tailing multiple log files simultaneously",
+    "Load last N lines immediately on tab creation",
+    "Scroll-up loads older lines",
+    "Dedicated debug tab for internal messages",
+    "Material Icons (SVG) for tab headers",
+    "File-open dialog for adding new tabs",
+    "Remove hardcoded default file path"
+  ],
+  "current_features": {
+    "multi_tabs": true,
+    "debug_tab": true,
+    "file_open_dialog": true,
+    "tailing": "per-tab async tail loop",
+    "load_last_lines": 2000,
+    "scroll_up_load": true,
+    "material_icons": "Material.Icons.Avalonia (SVG)",
+    "reactiveui": true
+  },
+  "architecture": {
+    "models": [
+      "TailService.cs: handles tailing, loading last lines, loading older chunks"
+    ],
+    "viewmodels": [
+      "ViewModelBase.cs: inherits ReactiveObject",
+      "MainWindowViewModel.cs: manages Tabs, SelectedTab, DebugTab",
+      "LogTabViewModel.cs: represents a single tab (file or debug)"
+    ],
+    "views": [
+      "MainWindow.axaml: TabControl with Material Icons + close buttons",
+      "MainWindow.axaml.cs: orchestrates tab creation, tail loops, scroll handling"
+    ],
+    "data_flow": {
+      "open_file": "User selects file → CreateLogTabAsync → LoadLastLines → Start tail loop",
+      "tail_loop": "TailService.TailFile yields new lines → UI thread appends to tab",
+      "scroll_up": "ScrollChanged triggers ReadPreviousChunk → prepend lines",
+      "debug_output": "AppendDebug writes to DebugTab.Lines"
+    }
+  },
+  "key_design_decisions": [
+    "Each tab has its own TailService instance and state",
+    "Debug tab is permanent and cannot be closed",
+    "Material Icons (SVG) chosen for crisp DPI scaling",
+    "ReactiveUI used for property change notifications",
+    "Auto-properties avoided for ref parameters (ReadOffset uses backing field)",
+    "OpenFileDialog replaced later with StorageProvider API"
+  ],
+  "known_issues": [
+    "OpenFileDialog is obsolete (warning only)",
+    "ScrollIntoView lookup could be improved",
+    "Tail loops are not cancellable when closing tabs",
+    "No search/filter yet",
+    "No pause/resume tail yet"
+  ],
+  "next_steps": [
+    "Replace OpenFileDialog with StorageProvider",
+    "Add search/filter per tab",
+    "Add pause/resume tail",
+    "Add log level highlighting",
+    "Add tab reordering",
+    "Add clear-tab functionality"
+  ],
+  "conversation_summary": [
+    "User wanted a log viewer with tailing and scroll-up loading.",
+    "Initial implementation only tailed new lines; older lines were not loaded.",
+    "We added heavy debugging to diagnose file reading behavior.",
+    "Discovered XRDP log writes very infrequently; tailer was correct.",
+    "Implemented LoadLastLines to populate viewer immediately.",
+    "User requested multi-tab support, debug tab, Material Icons, file dialogs.",
+    "We built a full tabbed architecture with per-tab tail loops.",
+    "Fixed ReactiveUI inheritance and Material Icons package issues.",
+    "Fixed CS0206 by using backing field for ReadOffset."
+  ],
+  "user_preferences": {
+    "icons": "Material Icons (SVG)",
+    "tabs": "icons + close buttons",
+    "debugging": "must go to its own tab",
+    "startup": "no default file",
+    "load_last_lines": 2000
+  }
+}

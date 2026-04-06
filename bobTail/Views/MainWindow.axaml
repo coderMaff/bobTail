@@ -1,0 +1,86 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:bobTail.ViewModels"
+        xmlns:material="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        x:Class="bobTail.Views.MainWindow"
+        Background="HotPink">
+
+    <!-- GLOBAL STYLES (fix double spacing safely) -->
+    <Window.Styles>
+        <!-- Remove padding/margin from ListBox items -->
+        <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="MinHeight" Value="0" />
+        </Style>
+
+        <!-- Remove padding/margin from text inside ListBox -->
+        <Style Selector="ListBox TextBlock">
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+    </Window.Styles>
+
+    <Window.DataContext>
+        <vm:MainWindowViewModel />
+    </Window.DataContext>
+
+    <DockPanel LastChildFill="True" Margin="10">
+
+        <!-- Top buttons -->
+        <StackPanel DockPanel.Dock="Top"
+                    Orientation="Horizontal"
+                    Spacing="10">
+            <Button Content="Open File"
+                    Width="120"
+                    Click="OpenFileButton_OnClick" />
+
+            <Button Content="Settings"
+                    Width="120"
+                    Click="SettingsButton_OnClick" />
+        </StackPanel>
+
+        <!-- TAB CONTROL -->
+        <TabControl ItemsSource="{Binding Tabs}"
+                    SelectedItem="{Binding SelectedTab}">
+
+            <!-- TAB HEADER TEMPLATE -->
+            <TabControl.ItemTemplate>
+                <DataTemplate DataType="vm:LogTabViewModel">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+
+                        <!-- Material Icon with fallback -->
+                        <material:MaterialIcon Kind="{Binding IconKind, FallbackValue=FileDocumentOutline}"
+                                               Width="16" Height="16" />
+
+                        <TextBlock Text="{Binding Title}" />
+
+                        <!-- Close button wrapped safely -->
+                        <Button Content="×"
+                                Margin="6,0,0,0"
+                                Padding="0"
+                                Width="18"
+                                Height="18"
+                                Click="CloseTab_OnClick"
+                                CommandParameter="{Binding}" />
+                    </StackPanel>
+                </DataTemplate>
+            </TabControl.ItemTemplate>
+
+            <!-- TAB CONTENT TEMPLATE -->
+            <TabControl.ContentTemplate>
+                <DataTemplate DataType="vm:LogTabViewModel">
+
+                    <!-- ListBox WITHOUT Name attribute -->
+                    <ListBox ItemsSource="{Binding Lines}"
+                             FontFamily="Consolas"
+                             Background="DeepSkyBlue"
+                             ScrollViewer.ScrollChanged="LogList_OnScrollChanged" />
+
+                </DataTemplate>
+            </TabControl.ContentTemplate>
+
+        </TabControl>
+
+    </DockPanel>
+</Window>
