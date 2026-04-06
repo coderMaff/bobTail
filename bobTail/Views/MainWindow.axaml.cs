@@ -16,6 +16,19 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        var state = StateService.LoadState();
+        if (state != null)
+        {
+            foreach (var file in state.Value.files)
+                _ = CreateLogTabAsync(file);
+
+            Vm.DebugTabVisible = state.Value.debugVisible;
+        }
+        else
+        {
+            Vm.DebugTabVisible = true; // default during development
+        }
+
     }
 
     private MainWindowViewModel Vm => (MainWindowViewModel)DataContext!;
@@ -134,20 +147,18 @@ public partial class MainWindow : Window
 
     private void CloseTab_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (sender is not Button btn || btn.CommandParameter is not LogTabViewModel tab)
-            return;
+        if (sender is not Button btn) return;
+        if (btn.CommandParameter is not LogTabViewModel tab) return;
 
         if (tab.IsDebug)
         {
-            AppendDebug("[DEBUG] Debug tab cannot be closed.");
+            Vm.DebugTabVisible = false;
             return;
         }
 
         Vm.Tabs.Remove(tab);
-
-        if (Vm.SelectedTab == tab)
-            Vm.SelectedTab = Vm.DebugTab;
     }
+
 
     private void SettingsButton_OnClick(object? sender, RoutedEventArgs e)
     {
@@ -158,4 +169,15 @@ public partial class MainWindow : Window
     {
         Vm.DebugTab.Lines.Add(message);
     }
+
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        base.OnClosing(e);
+
+        StateService.SaveState(
+            Vm.Tabs,
+            Vm.DebugTabVisible
+        );
+    }
+
 }

@@ -29,4 +29,30 @@ public class MainWindowViewModel : ViewModelBase
         Tabs.Add(DebugTab);
         SelectedTab = DebugTab;
     }
+
+    private bool _debugTabVisible = true;
+    public bool DebugTabVisible
+    {
+        get => _debugTabVisible;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _debugTabVisible, value);
+            UpdateDebugTabVisibility();
+        }
+    }
+
+    private void UpdateDebugTabVisibility()
+    {
+        if (DebugTabVisible)
+        {
+            if (!Tabs.Contains(DebugTab))
+                Tabs.Insert(0, DebugTab);
+        }
+        else
+        {
+            if (Tabs.Contains(DebugTab))
+                Tabs.Remove(DebugTab);
+        }
+    }
+
 }
