@@ -1,32 +1,99 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="bobTail.Views.SettingsWindow"
-        Width="400"
-        Height="220"
+        Width="640"
+        Height="520"
         Title="Settings">
 
-    <StackPanel Margin="20" Spacing="10">
+    <Window.Styles>
+        <Style Selector="ListBoxItem:nth-child(4) TextBlock">
+            <Setter Property="Foreground" Value="Orange" />
+        </Style>
+    </Window.Styles>
 
-        <TextBlock Text="Settings"
-                   FontSize="18"
-                   FontWeight="Bold" />
+    <ScrollViewer>
+        <StackPanel Margin="20" Spacing="12">
 
-        <Separator />
+            <TextBlock Text="Settings"
+                       FontSize="18"
+                       FontWeight="Bold" />
 
-        <CheckBox Content="Show Debug Tab"
-                  IsChecked="{Binding DebugTabVisible}" />
+            <Separator />
 
-        <CheckBox Content="Tail new files by default"
-                  IsChecked="{Binding DefaultTailEnabled}" />
+            <CheckBox Content="Show Debug Tab"
+                      IsChecked="{Binding DebugTabVisible}" />
 
-        <StackPanel Orientation="Horizontal"
-                    HorizontalAlignment="Right"
-                    Margin="0,20,0,0"
-                    Spacing="10">
-            <Button Content="Close"
-                    Width="80"
-                    Click="CloseButton_OnClick" />
+            <CheckBox Content="Tail new files by default"
+                      IsChecked="{Binding DefaultTailEnabled}" />
+
+            <TextBlock Text="Highlight rules"
+                       FontSize="14"
+                       FontWeight="Bold"
+                       Margin="0,10,0,0" />
+
+            <ListBox ItemsSource="{Binding HighlightRules}"
+                     SelectedItem="{Binding SelectedHighlightRule}"
+                     Height="160">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="{Binding Text}" Width="220" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding MatchMode}" Width="90" />
+                            <TextBlock Text="{Binding ForegroundColor}" Width="90" />
+                            <TextBlock Text="{Binding BackgroundColor}" Width="90" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <Button Content="Add" Width="80" Click="AddHighlightRule_OnClick" />
+                <Button Content="Remove" Width="80" Click="RemoveHighlightRule_OnClick" />
+                <Button Content="Move Up" Width="80" Click="MoveHighlightRuleUp_OnClick" />
+                <Button Content="Move Down" Width="80" Click="MoveHighlightRuleDown_OnClick" />
+            </StackPanel>
+
+            <Border BorderBrush="Gray" BorderThickness="1" Padding="10">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Selected rule details"
+                               FontWeight="Bold" />
+
+                    <TextBlock Text="Text to match" />
+                    <TextBox Text="{Binding SelectedHighlightRule.Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Text="Match type" />
+                    <ComboBox ItemsSource="{Binding MatchModes}"
+                              SelectedItem="{Binding SelectedHighlightRule.MatchMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <StackPanel Orientation="Horizontal" Spacing="20">
+                        <StackPanel Width="220">
+                            <TextBlock Text="Foreground color" />
+                            <ComboBox ItemsSource="{Binding AvailableColors}"
+                                      SelectedItem="{Binding SelectedHighlightRule.ForegroundColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+
+                        <StackPanel Width="220">
+                            <TextBlock Text="Background color" />
+                            <ComboBox ItemsSource="{Binding AvailableColors}"
+                                      SelectedItem="{Binding SelectedHighlightRule.BackgroundColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <TextBlock Text="Rules are evaluated in list order. Higher rules take priority." 
+                               FontStyle="Italic"
+                               Foreground="Gray" />
+                </StackPanel>
+            </Border>
+
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Margin="0,10,0,0"
+                        Spacing="10">
+                <Button Content="Close"
+                        Width="80"
+                        Click="CloseButton_OnClick" />
+            </StackPanel>
+
         </StackPanel>
-
-    </StackPanel>
+    </ScrollViewer>
 </Window>

@@ -7,6 +7,36 @@ namespace bobTail.ViewModels;
 public class MainWindowViewModel : ViewModelBase
 {
     public ObservableCollection<LogTabViewModel> Tabs { get; } = new();
+    public ObservableCollection<HighlightRule> HighlightRules { get; } = new();
+
+    public string[] MatchModes { get; } =
+    {
+        HighlightRule.Exact,
+        HighlightRule.IgnoreCase,
+        HighlightRule.Regex
+    };
+
+    public string[] AvailableColors { get; } =
+    {
+        "Transparent",
+        "White",
+        "Black",
+        "Red",
+        "Green",
+        "Blue",
+        "Yellow",
+        "Orange",
+        "Magenta",
+        "Cyan",
+        "Gray"
+    };
+
+    private HighlightRule? _selectedHighlightRule;
+    public HighlightRule? SelectedHighlightRule
+    {
+        get => _selectedHighlightRule;
+        set => this.RaiseAndSetIfChanged(ref _selectedHighlightRule, value);
+    }
 
     private LogTabViewModel? _selectedTab;
     public LogTabViewModel? SelectedTab

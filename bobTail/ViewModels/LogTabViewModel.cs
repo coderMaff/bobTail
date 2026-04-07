@@ -13,7 +13,7 @@ public class LogTabViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _title, value);
     }
 
-    public ObservableCollection<string> Lines { get; } = new();
+    public ObservableCollection<LogLineViewModel> Lines { get; } = new();
 
     private string? _filePath;
     public string? FilePath

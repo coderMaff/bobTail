@@ -18,7 +18,8 @@ public static class StateService
     public static void SaveState(
         IEnumerable<LogTabViewModel> tabs,
         bool debugVisible,
-        bool defaultTail)
+        bool defaultTail,
+        IEnumerable<HighlightRule> highlightRules)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(StatePath)!);
 
@@ -29,13 +30,14 @@ public static class StateService
                 .Select(t => t.FilePath!)
                 .ToList(),
             debugVisible,
-            defaultTail
+            defaultTail,
+            highlightRules = highlightRules.ToList()
         };
 
         File.WriteAllText(StatePath, JsonSerializer.Serialize(state));
     }
 
-    public static (List<string> files, bool debugVisible, bool defaultTail)? LoadState()
+    public static (List<string> files, bool debugVisible, bool defaultTail, List<HighlightRule> highlightRules)? LoadState()
     {
         if (!File.Exists(StatePath))
             return null;
@@ -43,7 +45,12 @@ public static class StateService
         var json = File.ReadAllText(StatePath);
         var state = JsonSerializer.Deserialize<StateModel>(json);
 
-        return (state!.openFiles, state.debugVisible, state.defaultTail);
+        return (
+            state!.openFiles,
+            state.debugVisible,
+            state.defaultTail,
+            state.highlightRules ?? new List<HighlightRule>()
+        );
     }
 
     private class StateModel
@@ -51,5 +58,6 @@ public static class StateService
         public List<string> openFiles { get; set; } = new();
         public bool debugVisible { get; set; }
         public bool defaultTail { get; set; } = true;
+        public List<HighlightRule>? highlightRules { get; set; } = new();
     }
 }

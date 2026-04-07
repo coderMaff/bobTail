@@ -18,6 +18,10 @@
             <Setter Property="Padding" Value="0" />
         </Style>
 
+        <Style Selector="ListBoxItem:nth-child(4) TextBlock">
+            <Setter Property="Foreground" Value="Orange" />
+        </Style>
+
         <!-- Unread tab text -->
         <Style Selector="TabControl TextBlock.unread">
             <Setter Property="Foreground" Value="Lime" />
@@ -100,13 +104,15 @@
                              ScrollViewer.ScrollChanged="LogList_OnScrollChanged">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding}" 
-                                           FontFamily="Consolas" 
+                                <TextBlock Text="{Binding Text, Mode=OneWay}"
+                                           Foreground="{Binding Foreground, Mode=OneWay}"
+                                           Background="{Binding Background, Mode=OneWay}"
+                                           FontFamily="Consolas"
                                            Padding="0"
                                            Height="18"/>
-                            </DataTemplate>    
-                        </ListBox.ItemTemplate>                         
-                    </ListBox>                    
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                 </DataTemplate>
             </TabControl.ContentTemplate>
 
