@@ -107,7 +107,7 @@ public class TailService
                         else
                             lineBuffer.RemoveAt(0);
 
-                        var lineStr = encoding.GetString(lineBuffer.ToArray());
+                        var lineStr = StripBOM(encoding.GetString(lineBuffer.ToArray()));
                         if (!string.IsNullOrEmpty(lineStr))
                         {
                             lines.Add(lineStr);
@@ -190,7 +190,7 @@ public class TailService
                         else
                             lineBuffer.RemoveAt(0);
 
-                        var lineStr = encoding.GetString(lineBuffer.ToArray());
+                        var lineStr = StripBOM(encoding.GetString(lineBuffer.ToArray()));
                         if (!string.IsNullOrEmpty(lineStr))
                         {
                             lines.Add(lineStr);
@@ -206,7 +206,7 @@ public class TailService
         // Don't forget remaining bytes as last line
         if (lineBuffer.Count > 0 && lines.Count < maxLines)
         {
-            var lineStr = encoding.GetString(lineBuffer.ToArray());
+            var lineStr = StripBOM(encoding.GetString(lineBuffer.ToArray()));
             if (!string.IsNullOrEmpty(lineStr))
                 lines.Add(lineStr);
         }

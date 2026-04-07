@@ -116,15 +116,9 @@ public partial class MainWindow : Window
 
         // Load last lines
         var lastLines = _tailService.LoadLastLines(path, 2000).ToList();
-        var isFirstLine = true;
         foreach (var line in lastLines)
         {
             var highlighted = CreateHighlightedLine(line, tab.FilePath);
-            if (isFirstLine)
-            {
-                highlighted.Foreground = Brushes.Orange;
-                isFirstLine = false;
-            }
             tab.Lines.Add(highlighted);
         }
 
@@ -373,16 +367,6 @@ public partial class MainWindow : Window
                     : line.Contains(textToMatch, StringComparison.Ordinal);
 
             evaluationResults.Add($"{matchMode}:{textToMatch}={(isMatch ? "Y" : "N")}");
-
-            // Detailed logging for first 3 rules evaluated per file
-            if (filePath != null && (!_highlightDebugCounts.TryGetValue(filePath, out var count) || count < 3))
-            {
-                var lineHex = string.Join(" ", line.Take(50).Select(c => $"{(int)c:X2}"));
-                var textHex = string.Join(" ", textToMatch.Select(c => $"{(int)c:X2}"));
-                AppendDebug($"[DETAIL] Line hex (first 50 chars): {lineHex}");
-                AppendDebug($"[DETAIL] Search text hex: {textHex}");
-                AppendDebug($"[DETAIL] Contains result: {isMatch}");
-            }
 
             if (!isMatch)
                 continue;
