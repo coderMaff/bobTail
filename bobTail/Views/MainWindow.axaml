@@ -52,6 +52,10 @@
             <Button Content="Settings"
                     Width="120"
                     Click="SettingsButton_OnClick" />
+
+            <Button Content="About"
+                    Width="120"
+                    Click="AboutButton_OnClick" />                    
         </StackPanel>
 
         <TabControl ItemsSource="{Binding Tabs}"
@@ -73,18 +77,17 @@
                                       Height="18"
                                       Margin="4,0,0,0"
                                       ToolTip.Tip="Tail (auto-scroll)">
-                            <material:MaterialIcon Kind="ArrowDownBold"
-                                                   Width="14"
-                                                   Height="14" />
+
                         </ToggleButton>
 
                         <Button Content="×"
                                 Margin="6,0,0,0"
                                 Padding="0"
                                 Width="18"
-                                Height="18"
+                                Height="30"
                                 Click="CloseTab_OnClick"
-                                CommandParameter="{Binding}" />
+                                CommandParameter="{Binding}"
+                                Background="red" />
                     </StackPanel>
                 </DataTemplate>
             </TabControl.ItemTemplate>
@@ -94,7 +97,16 @@
                     <ListBox ItemsSource="{Binding Lines}"
                              FontFamily="Consolas"
                              Background="DeepSkyBlue"
-                             ScrollViewer.ScrollChanged="LogList_OnScrollChanged" />
+                             ScrollViewer.ScrollChanged="LogList_OnScrollChanged">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" 
+                                           FontFamily="Consolas" 
+                                           Padding="0"
+                                           Height="18"/>
+                            </DataTemplate>    
+                        </ListBox.ItemTemplate>                         
+                    </ListBox>                    
                 </DataTemplate>
             </TabControl.ContentTemplate>
 

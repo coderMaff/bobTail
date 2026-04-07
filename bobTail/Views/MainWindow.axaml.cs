@@ -187,6 +187,18 @@ public partial class MainWindow : Window
         AppendDebug("[DEBUG] Settings window opened.");
     }
 
+    private void AboutButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        var about = new AboutWindow
+        {
+            DataContext = DataContext,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+
+        about.Show(this);
+        AppendDebug("[DEBUG] about window opened.");
+    }
+
     private void AppendDebug(string message)
     {
         Vm.DebugTab.Lines.Add(message);
