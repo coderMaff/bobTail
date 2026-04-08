@@ -9,6 +9,18 @@
         <Style Selector="ListBoxItem:nth-child(4) TextBlock">
             <Setter Property="Foreground" Value="Orange" />
         </Style>
+        <Style Selector="ComboBox">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Background" Value="#1e1e1e" />
+            <Setter Property="BorderBrush" Value="#555" />
+        </Style>
+        <Style Selector="ComboBoxItem">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Background" Value="#1e1e1e" />
+        </Style>
+        <Style Selector="ComboBoxItem:pointerover">
+            <Setter Property="Background" Value="#333" />
+        </Style>
     </Window.Styles>
 
     <ScrollViewer>
@@ -63,19 +75,31 @@
 
                     <TextBlock Text="Match type" />
                     <ComboBox ItemsSource="{Binding MatchModes}"
-                              SelectedItem="{Binding SelectedHighlightRule.MatchMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                              SelectedItem="Exact">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
 
                     <StackPanel Orientation="Horizontal" Spacing="20">
                         <StackPanel Width="220">
                             <TextBlock Text="Foreground color" />
                             <ComboBox ItemsSource="{Binding AvailableColors}"
-                                      SelectedItem="{Binding SelectedHighlightRule.ForegroundColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                      SelectedItem="White">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
                         </StackPanel>
 
                         <StackPanel Width="220">
                             <TextBlock Text="Background color" />
                             <ComboBox ItemsSource="{Binding AvailableColors}"
-                                      SelectedItem="{Binding SelectedHighlightRule.BackgroundColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                      SelectedItem="Black" />
                         </StackPanel>
                     </StackPanel>
 
