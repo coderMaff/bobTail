@@ -15,6 +15,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using bobTail.Models;
 using bobTail.ViewModels;
 
@@ -30,6 +31,18 @@ public partial class MainWindow : Window
     private static bool _shouldQuitAfterLoad = false;
     private int _filesLoadingCount = 0;
     private ScrollViewer? _currentScrollViewer;
+
+    private void EnsureScrollViewerFound()
+    {
+        if (_currentScrollViewer == null)
+        {
+            var listBox = this.FindDescendantOfType<ListBox>();
+            if (listBox != null)
+            {
+                _currentScrollViewer = listBox.FindDescendantOfType<ScrollViewer>();
+            }
+        }
+    }
     private LogTabViewModel? _currentTab;
 
     public MainWindow()
@@ -135,6 +148,19 @@ public partial class MainWindow : Window
         Vm.Tabs.Add(tab);
         Vm.SelectedTab = tab;
 
+        // Scroll to bottom if AutoScroll is enabled
+        if (tab.AutoScroll && tab.Lines.Count > 0)
+        {
+            _ = Task.Delay(100).ContinueWith(_ =>
+            {
+                Dispatcher.UIThread.Post(() =>
+                {
+                    EnsureScrollViewerFound();
+                    ScrollToBottom();
+                });
+            });
+        }
+
         AppendDebug($"[DEBUG] Opened file: {path}");
         AppendDebug($"[DEBUG] Initial size: {initialSize}");
         AppendDebug($"[DEBUG] Loaded {tab.Lines.Count} initial lines into tab");
@@ -178,7 +204,15 @@ public partial class MainWindow : Window
                 // Scroll to bottom if AutoScroll is enabled and this is the selected tab
                 if (tab.AutoScroll && Vm.SelectedTab == tab)
                 {
-                    Dispatcher.UIThread.Post(() => ScrollToBottom());
+                    // Wait a frame for layout to measure the new item
+                    _ = Task.Delay(10).ContinueWith(_ =>
+                    {
+                        Dispatcher.UIThread.Post(() =>
+                        {
+                            EnsureScrollViewerFound();
+                            ScrollToBottom();
+                        }, DispatcherPriority.Input);
+                    });
                 }
             }, DispatcherPriority.Background);
         }
@@ -196,7 +230,15 @@ public partial class MainWindow : Window
 
         _currentScrollViewer = sv;
 
-        tab.AutoScroll = sv.Offset.Y >= sv.Extent.Height - sv.Viewport.Height - 5;
+        //Only update AutoScroll based on position if we've already scrolled to bottom at least once
+        if (tab.HasInitialScrolled)
+        {
+            tab.AutoScroll = sv.Offset.Y >= sv.Extent.Height - sv.Viewport.Height - 5;
+        }
+        else
+        {
+            tab.HasInitialScrolled = true;
+        }
 
         if (tab.FilePath == null || tab.ReadOffset <= 0)
             return;
@@ -226,13 +268,19 @@ public partial class MainWindow : Window
 
     private void ScrollToBottom()
     {
-        AppendDebug("[DEBUG] Scrolling to bottom");
-        if (_currentScrollViewer != null)
+        AppendDebug("[DEBUG] ScrollToBottom called");
+        if (_currentScrollViewer == null)
         {
-            AppendDebug($"[DEBUG] Current offset before scroll: {_currentScrollViewer.Offset}");
-            _currentScrollViewer.Offset = new Avalonia.Vector(0, _currentScrollViewer.Extent.Height - _currentScrollViewer.Viewport.Height);
-            AppendDebug($"[DEBUG] Current offset after scroll: {_currentScrollViewer.Offset}");
+            AppendDebug("[DEBUG] ScrollToBottom: _currentScrollViewer is null");
+            return;
         }
+
+        AppendDebug($"[DEBUG] Current extent: {_currentScrollViewer.Extent}, viewport: {_currentScrollViewer.Viewport}, offset: {_currentScrollViewer.Offset}");
+        
+        double targetOffset = Math.Max(0, _currentScrollViewer.Extent.Height - _currentScrollViewer.Viewport.Height);
+        _currentScrollViewer.Offset = new Avalonia.Vector(0, targetOffset);
+        
+        AppendDebug($"[DEBUG] Scrolled to offset: {_currentScrollViewer.Offset}");
     }
 
     private void Vm_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -248,6 +296,22 @@ public partial class MainWindow : Window
             {
                 _currentTab.PropertyChanged += Tab_PropertyChanged;
             }
+            
+            // Reset ScrollViewer reference when tab changes
+            _currentScrollViewer = null;
+            
+            // If new tab has AutoScroll enabled, scroll to bottom
+            if (_currentTab?.AutoScroll == true)
+            {
+                _ = Task.Delay(50).ContinueWith(_ =>
+                {
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        EnsureScrollViewerFound();
+                        ScrollToBottom();
+                    });
+                });
+            }
         }
     }
 
@@ -255,6 +319,7 @@ public partial class MainWindow : Window
     {
         if (e.PropertyName == nameof(LogTabViewModel.AutoScroll) && _currentTab?.AutoScroll == true)
         {
+            EnsureScrollViewerFound();
             Dispatcher.UIThread.Post(() => ScrollToBottom());
         }
     }
@@ -273,6 +338,25 @@ public partial class MainWindow : Window
         }
 
         Vm.Tabs.Remove(tab);
+    }
+
+    private void TopButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        AppendDebug("[DEBUG] Top button clicked");
+        EnsureScrollViewerFound();
+        
+        if (_currentScrollViewer != null)
+        {
+            _currentScrollViewer.Offset = new Avalonia.Vector(0, 0);
+            AppendDebug($"[DEBUG] Scrolled to top, offset: {_currentScrollViewer.Offset}");
+        }
+    }
+
+    private void BottomButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        AppendDebug("[DEBUG] Bottom button clicked");
+        EnsureScrollViewerFound();
+        ScrollToBottom();
     }
 
     private void SettingsButton_OnClick(object? sender, RoutedEventArgs e)

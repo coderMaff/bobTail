@@ -43,6 +43,8 @@ public class LogTabViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _autoScroll, value);
     }
 
+    public bool HasInitialScrolled { get; set; } = false;
+
     private long _readOffset;
     public long ReadOffset
     {

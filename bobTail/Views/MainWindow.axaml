@@ -25,17 +25,6 @@
             <Setter Property="Foreground" Value="Lime" />
         </Style>
 
-        <!-- Tail toggle visual -->
-        <Style Selector="ToggleButton#TailToggle">
-            <Setter Property="Background" Value="Black"/>
-            <Setter Property="Foreground" Value="White"/>
-        </Style>
-
-        <Style Selector="ToggleButton#TailToggle:checked">
-            <Setter Property="Background" Value="Lime"/>
-            <Setter Property="Foreground" Value="Black"/>
-        </Style>
-
         <!-- Tighter tab header padding -->
         <Style Selector="TabItem">
             <Setter Property="Padding" Value="4,2" />
@@ -55,9 +44,15 @@
             <Button Content="Settings" Width="120" Click="SettingsButton_OnClick" />
 
             <Button Content="About" Width="120" Click="AboutButton_OnClick" />
+
+            <Separator />
+
+            <Button Content="Top" Width="120" Click="TopButton_OnClick" />
+
+            <Button Content="Bottom" Width="120" Click="BottomButton_OnClick" />
         </StackPanel>
 
-        <TabControl ItemsSource="{Binding Tabs}" SelectedItem="{Binding SelectedTab}">
+        <TabControl ItemsSource="{Binding Tabs}" SelectedItem="{Binding SelectedTab}" x:Name="TabControl">
 
             <TabControl.ItemTemplate>
                 <DataTemplate DataType="vm:LogTabViewModel">
@@ -67,7 +62,7 @@
 
                         <TextBlock Text="{Binding Title}" Classes.unread="{Binding HasUnread}" />
 
-                        <ToggleButton x:Name="TailToggle" IsChecked="{Binding AutoScroll}" Width="18" Height="30" Margin="6,0,0,0" ToolTip.Tip="Tail (auto-scroll)" />
+                        <ToggleButton x:Name="TailToggle" IsChecked="{Binding AutoScroll}" Width="18" Height="30" Margin="6,0,0,0" ToolTip.Tip="Tail (auto-scroll)" Background="black"/>
 
                         <Button Content="×" Margin="6,0,0,0" Padding="0" Width="18" Height="30" Click="CloseTab_OnClick" CommandParameter="{Binding}" Background="red" />
                     </StackPanel>
