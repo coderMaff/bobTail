@@ -1,9 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="clr-namespace:bobTail.ViewModels"
-        xmlns:material="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
-        x:Class="bobTail.Views.MainWindow"
-        Background="HotPink">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="clr-namespace:bobTail.ViewModels"
+    xmlns:material="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia" x:Class="bobTail.Views.MainWindow" Background="HotPink">
 
     <Window.Styles>
 
@@ -28,9 +26,14 @@
         </Style>
 
         <!-- Tail toggle visual -->
-        <Style Selector="ToggleButton.tailOn">
-            <Setter Property="Background" Value="LimeGreen" />
-            <Setter Property="Foreground" Value="Black" />
+        <Style Selector="ToggleButton#TailToggle">
+            <Setter Property="Background" Value="Black"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <Style Selector="ToggleButton#TailToggle:checked">
+            <Setter Property="Background" Value="Lime"/>
+            <Setter Property="Foreground" Value="Black"/>
         </Style>
 
         <!-- Tighter tab header padding -->
@@ -46,70 +49,37 @@
 
     <DockPanel LastChildFill="True" Margin="10">
 
-        <StackPanel DockPanel.Dock="Top"
-                    Orientation="Horizontal"
-                    Spacing="10">
-            <Button Content="Open File"
-                    Width="120"
-                    Click="OpenFileButton_OnClick" />
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10">
+            <Button Content="Open File" Width="120" Click="OpenFileButton_OnClick" />
 
-            <Button Content="Settings"
-                    Width="120"
-                    Click="SettingsButton_OnClick" />
+            <Button Content="Settings" Width="120" Click="SettingsButton_OnClick" />
 
-            <Button Content="About"
-                    Width="120"
-                    Click="AboutButton_OnClick" />                    
+            <Button Content="About" Width="120" Click="AboutButton_OnClick" />
         </StackPanel>
 
-        <TabControl ItemsSource="{Binding Tabs}"
-                    SelectedItem="{Binding SelectedTab}">
+        <TabControl ItemsSource="{Binding Tabs}" SelectedItem="{Binding SelectedTab}">
 
             <TabControl.ItemTemplate>
                 <DataTemplate DataType="vm:LogTabViewModel">
                     <StackPanel Orientation="Horizontal" Spacing="6">
 
-                        <material:MaterialIcon Kind="{Binding IconKind, FallbackValue=FileDocumentOutline}"
-                                               Width="16" Height="16" />
+                        <material:MaterialIcon Kind="{Binding IconKind, FallbackValue=FileDocumentOutline}" Width="16" Height="16" />
 
-                        <TextBlock Text="{Binding Title}"
-                                   Classes.unread="{Binding HasUnread}" />
+                        <TextBlock Text="{Binding Title}" Classes.unread="{Binding HasUnread}" />
 
-                        <ToggleButton IsChecked="{Binding AutoScroll}"
-                                      Classes.tailOn="{Binding AutoScroll}"
-                                      Width="18"
-                                      Height="18"
-                                      Margin="4,0,0,0"
-                                      ToolTip.Tip="Tail (auto-scroll)">
+                        <ToggleButton x:Name="TailToggle" IsChecked="{Binding AutoScroll}" Width="18" Height="30" Margin="6,0,0,0" ToolTip.Tip="Tail (auto-scroll)" />
 
-                        </ToggleButton>
-
-                        <Button Content="×"
-                                Margin="6,0,0,0"
-                                Padding="0"
-                                Width="18"
-                                Height="30"
-                                Click="CloseTab_OnClick"
-                                CommandParameter="{Binding}"
-                                Background="red" />
+                        <Button Content="×" Margin="6,0,0,0" Padding="0" Width="18" Height="30" Click="CloseTab_OnClick" CommandParameter="{Binding}" Background="red" />
                     </StackPanel>
                 </DataTemplate>
             </TabControl.ItemTemplate>
 
             <TabControl.ContentTemplate>
                 <DataTemplate DataType="vm:LogTabViewModel">
-                    <ListBox ItemsSource="{Binding Lines}"
-                             FontFamily="Consolas"
-                             Background="DeepSkyBlue"
-                             ScrollViewer.ScrollChanged="LogList_OnScrollChanged">
+                    <ListBox ItemsSource="{Binding Lines}" FontFamily="Consolas" Background="DeepSkyBlue" ScrollViewer.ScrollChanged="LogList_OnScrollChanged">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Text, Mode=OneWay}"
-                                           Foreground="{Binding Foreground, Mode=OneWay}"
-                                           Background="{Binding Background, Mode=OneWay}"
-                                           FontFamily="Consolas"
-                                           Padding="0"
-                                           Height="18"/>
+                                <TextBlock Text="{Binding Text, Mode=OneWay}" Foreground="{Binding Foreground, Mode=OneWay}" Background="{Binding Background, Mode=OneWay}" FontFamily="Consolas" Padding="0" Height="18"/>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>

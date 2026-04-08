@@ -29,6 +29,8 @@ public partial class MainWindow : Window
     private static StreamWriter? _debugLogWriter;
     private static bool _shouldQuitAfterLoad = false;
     private int _filesLoadingCount = 0;
+    private ScrollViewer? _currentScrollViewer;
+    private LogTabViewModel? _currentTab;
 
     public MainWindow()
     {
@@ -36,7 +38,7 @@ public partial class MainWindow : Window
 
         var args = Environment.GetCommandLineArgs();
         _shouldQuitAfterLoad = args.Contains("-quit", StringComparer.OrdinalIgnoreCase);
-        
+
         InitializeDebugLog();
 
         var state = StateService.LoadState();
@@ -61,6 +63,14 @@ public partial class MainWindow : Window
         }
 
         SubscribeToHighlightRuleChanges();
+
+        Vm.PropertyChanged += Vm_PropertyChanged;
+        // Initialize current tab
+        _currentTab = Vm.SelectedTab;
+        if (_currentTab != null)
+        {
+            _currentTab.PropertyChanged += Tab_PropertyChanged;
+        }
     }
 
     private MainWindowViewModel Vm => (MainWindowViewModel)DataContext!;
@@ -164,6 +174,12 @@ public partial class MainWindow : Window
 
                 if (Vm.SelectedTab != tab && !tab.AutoScroll)
                     tab.HasUnread = true;
+
+                // Scroll to bottom if AutoScroll is enabled and this is the selected tab
+                if (tab.AutoScroll && Vm.SelectedTab == tab)
+                {
+                    Dispatcher.UIThread.Post(() => ScrollToBottom());
+                }
             }, DispatcherPriority.Background);
         }
     }
@@ -175,6 +191,10 @@ public partial class MainWindow : Window
 
         if (sender is not ScrollViewer sv)
             return;
+
+        AppendDebug($"[DEBUG] Scroll changed: Offset={sv.Offset}, Viewport={sv.Viewport}, Extent={sv.Extent}");
+
+        _currentScrollViewer = sv;
 
         tab.AutoScroll = sv.Offset.Y >= sv.Extent.Height - sv.Viewport.Height - 5;
 
@@ -202,6 +222,41 @@ public partial class MainWindow : Window
             foreach (var line in older)
                 tab.Lines.Insert(0, CreateHighlightedLine(line, tab.FilePath));
         });
+    }
+
+    private void ScrollToBottom()
+    {
+        AppendDebug("[DEBUG] Scrolling to bottom");
+        if (_currentScrollViewer != null)
+        {
+            AppendDebug($"[DEBUG] Current offset before scroll: {_currentScrollViewer.Offset}");
+            _currentScrollViewer.Offset = new Avalonia.Vector(0, _currentScrollViewer.Extent.Height - _currentScrollViewer.Viewport.Height);
+            AppendDebug($"[DEBUG] Current offset after scroll: {_currentScrollViewer.Offset}");
+        }
+    }
+
+    private void Vm_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MainWindowViewModel.SelectedTab))
+        {
+            if (_currentTab != null)
+            {
+                _currentTab.PropertyChanged -= Tab_PropertyChanged;
+            }
+            _currentTab = Vm.SelectedTab;
+            if (_currentTab != null)
+            {
+                _currentTab.PropertyChanged += Tab_PropertyChanged;
+            }
+        }
+    }
+
+    private void Tab_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(LogTabViewModel.AutoScroll) && _currentTab?.AutoScroll == true)
+        {
+            Dispatcher.UIThread.Post(() => ScrollToBottom());
+        }
     }
 
     private void CloseTab_OnClick(object? sender, RoutedEventArgs e)
@@ -353,7 +408,7 @@ public partial class MainWindow : Window
         {
             var textToMatch = rule.Text?.Trim();
             var matchMode = rule.MatchMode?.Trim() ?? string.Empty;
-            
+
             if (string.IsNullOrEmpty(textToMatch))
             {
                 evaluationResults.Add($"{matchMode}:<empty>=N");
