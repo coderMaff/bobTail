@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using Avalonia.Media;
 using bobTail.ViewModels;
 
 namespace bobTail.Models;
@@ -31,7 +32,13 @@ public static class StateService
                 .ToList(),
             debugVisible,
             defaultTail,
-            highlightRules = highlightRules.ToList()
+            highlightRules = highlightRules.Select(r => new HighlightRuleDto
+            {
+                Text = r.Text,
+                MatchMode = r.MatchMode,
+                ForegroundColor = r.ForegroundColor.ToString(),
+                BackgroundColor = r.BackgroundColor.ToString()
+            }).ToList()
         };
 
         File.WriteAllText(StatePath, JsonSerializer.Serialize(state));
@@ -42,15 +49,39 @@ public static class StateService
         if (!File.Exists(StatePath))
             return null;
 
-        var json = File.ReadAllText(StatePath);
-        var state = JsonSerializer.Deserialize<StateModel>(json);
+        try
+        {
+            var json = File.ReadAllText(StatePath);
+            var state = JsonSerializer.Deserialize<StateModel>(json);
 
-        return (
-            state!.openFiles,
-            state.debugVisible,
-            state.defaultTail,
-            state.highlightRules ?? new List<HighlightRule>()
-        );
+            var rules = state?.highlightRules?.Select(r => new HighlightRule
+            {
+                Text = r.Text,
+                MatchMode = r.MatchMode,
+                ForegroundColor = Color.Parse(r.ForegroundColor),
+                BackgroundColor = Color.Parse(r.BackgroundColor)
+            }).ToList() ?? new List<HighlightRule>();
+
+            return (
+                state!.openFiles,
+                state.debugVisible,
+                state.defaultTail,
+                rules
+            );
+        }
+        catch
+        {
+            // Return null if there's any deserialization error, will start fresh
+            return null;
+        }
+    }
+
+    private class HighlightRuleDto
+    {
+        public string Text { get; set; } = string.Empty;
+        public string MatchMode { get; set; } = HighlightRule.Exact;
+        public string ForegroundColor { get; set; } = "White";
+        public string BackgroundColor { get; set; } = "Transparent";
     }
 
     private class StateModel
@@ -58,6 +89,6 @@ public static class StateService
         public List<string> openFiles { get; set; } = new();
         public bool debugVisible { get; set; }
         public bool defaultTail { get; set; } = true;
-        public List<HighlightRule>? highlightRules { get; set; } = new();
+        public List<HighlightRuleDto>? highlightRules { get; set; } = new();
     }
 }

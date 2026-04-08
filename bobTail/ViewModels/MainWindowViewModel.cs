@@ -16,21 +16,6 @@ public class MainWindowViewModel : ViewModelBase
         HighlightRule.Regex
     };
 
-    public string[] AvailableColors { get; } =
-    {
-        "Transparent",
-        "White",
-        "Black",
-        "Red",
-        "Green",
-        "Blue",
-        "Yellow",
-        "Orange",
-        "Magenta",
-        "Cyan",
-        "Gray"
-    };
-
     private HighlightRule? _selectedHighlightRule;
     public HighlightRule? SelectedHighlightRule
     {

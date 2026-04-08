@@ -1,8 +1,34 @@
+using System;
+using System.Globalization;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Data.Converters;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using bobTail.ViewModels;
 
 namespace bobTail.Views;
+
+public class ColorToSolidColorBrushConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo? culture)
+    {
+        if (value is Color color)
+        {
+            return new SolidColorBrush(color);
+        }
+        return null;
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo? culture)
+    {
+        if (value is SolidColorBrush brush)
+        {
+            return brush.Color;
+        }
+        return null;
+    }
+}
 
 public partial class SettingsWindow : Window
 {

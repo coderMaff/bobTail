@@ -166,7 +166,7 @@ public partial class MainWindow : Window
         AppendDebug($"[DEBUG] Loaded {tab.Lines.Count} initial lines into tab");
         AppendDebug($"[DEBUG] Active highlight rules: {Vm.HighlightRules.Count}");
         foreach (var rule in Vm.HighlightRules)
-            AppendDebug($"[DEBUG]   - {rule.Text} ({rule.MatchMode}) fg={rule.ForegroundColor} bg={rule.BackgroundColor}");
+            AppendDebug($"[DEBUG]   - {rule.Text} ({rule.MatchMode}) fg={rule.ForegroundColor:hsv} bg={rule.BackgroundColor:hsv}");
 
         _filesLoadingCount--;
         if (_shouldQuitAfterLoad && _filesLoadingCount == 0)
@@ -539,7 +539,7 @@ public partial class MainWindow : Window
 
         if (matchedRule != null)
         {
-            AppendDebug($"[HIGHLIGHT] {Path.GetFileName(filePath)} #{lineNumber}: '{preview}' -> '{matchedRule.Text}' ({matchedRule.MatchMode}) fg={matchedRule.ForegroundColor} bg={matchedRule.BackgroundColor} | rules={ruleSummary}");
+            AppendDebug($"[HIGHLIGHT] {Path.GetFileName(filePath)} #{lineNumber}: '{preview}' -> '{matchedRule.Text}' ({matchedRule.MatchMode}) fg={matchedRule.ForegroundColor:hsv} bg={matchedRule.BackgroundColor:hsv} | rules={ruleSummary}");
         }
         else
         {
@@ -547,19 +547,9 @@ public partial class MainWindow : Window
         }
     }
 
-    private static IBrush? ParseBrush(string? value)
+    private static IBrush? ParseBrush(Color color)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            return null;
-
-        try
-        {
-            return Brush.Parse(value);
-        }
-        catch
-        {
-            return null;
-        }
+        return new SolidColorBrush(color);
     }
 
     private static bool TryRegexMatch(string line, string pattern)

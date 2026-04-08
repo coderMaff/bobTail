@@ -1,3 +1,4 @@
+using Avalonia.Media;
 using ReactiveUI;
 
 namespace bobTail.ViewModels;
@@ -22,17 +23,55 @@ public class HighlightRule : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _matchMode, value?.Trim() ?? Exact);
     }
 
-    private string _foregroundColor = "White";
-    public string ForegroundColor
+    private Color _foregroundColor = Colors.White;
+    public Color ForegroundColor
     {
         get => _foregroundColor;
         set => this.RaiseAndSetIfChanged(ref _foregroundColor, value);
     }
 
-    private string _backgroundColor = "Transparent";
-    public string BackgroundColor
+    public string ForegroundColorHex
+    {
+        get => _foregroundColor.ToString();
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return;
+            try
+            {
+                var color = Color.Parse(value);
+                ForegroundColor = color;
+            }
+            catch
+            {
+                // Invalid color format, ignore
+            }
+        }
+    }
+
+    private Color _backgroundColor = Colors.Transparent;
+    public Color BackgroundColor
     {
         get => _backgroundColor;
         set => this.RaiseAndSetIfChanged(ref _backgroundColor, value);
+    }
+
+    public string BackgroundColorHex
+    {
+        get => _backgroundColor.ToString();
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return;
+            try
+            {
+                var color = Color.Parse(value);
+                BackgroundColor = color;
+            }
+            catch
+            {
+                // Invalid color format, ignore
+            }
+        }
     }
 }

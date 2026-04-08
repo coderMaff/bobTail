@@ -1,9 +1,15 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:bobTail.Views"
         x:Class="bobTail.Views.SettingsWindow"
         Width="640"
         Height="520"
         Title="Settings">
+
+    <Window.Resources>
+        <SolidColorBrush x:Key="DefaultWhite">#FFFFFFFF</SolidColorBrush>
+        <local:ColorToSolidColorBrushConverter x:Key="ColorToBrushConverter" />
+    </Window.Resources>
 
     <Window.Styles>
         <Style Selector="ListBoxItem:nth-child(4) TextBlock">
@@ -51,8 +57,8 @@
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <TextBlock Text="{Binding Text}" Width="220" TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="{Binding MatchMode}" Width="90" />
-                            <TextBlock Text="{Binding ForegroundColor}" Width="90" />
-                            <TextBlock Text="{Binding BackgroundColor}" Width="90" />
+                            <Rectangle Width="90" Height="25" Fill="{Binding ForegroundColor}" Stroke="Gray" StrokeThickness="1" />
+                            <Rectangle Width="90" Height="25" Fill="{Binding BackgroundColor}" Stroke="Gray" StrokeThickness="1" />
                         </StackPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
@@ -71,11 +77,11 @@
                                FontWeight="Bold" />
 
                     <TextBlock Text="Text to match" />
-                    <TextBox Text="{Binding SelectedHighlightRule.Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox Text="{Binding SelectedHighlightRule.Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=''}" />
 
                     <TextBlock Text="Match type" />
                     <ComboBox ItemsSource="{Binding MatchModes}"
-                              SelectedItem="Exact">
+                              SelectedItem="{Binding SelectedHighlightRule.MatchMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding}" />
@@ -86,21 +92,29 @@
                     <StackPanel Orientation="Horizontal" Spacing="20">
                         <StackPanel Width="220">
                             <TextBlock Text="Foreground color" />
-                            <ComboBox ItemsSource="{Binding AvailableColors}"
-                                      SelectedItem="White">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding}" />
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
+                            <TextBox Text="{Binding SelectedHighlightRule.ForegroundColorHex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=#FFFFFFFF}" 
+                                     Watermark="#FFFFFFFF" />
                         </StackPanel>
 
                         <StackPanel Width="220">
                             <TextBlock Text="Background color" />
-                            <ComboBox ItemsSource="{Binding AvailableColors}"
-                                      SelectedItem="Black" />
+                            <TextBox Text="{Binding SelectedHighlightRule.BackgroundColorHex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=#00000000}" 
+                                     Watermark="#00000000" />
                         </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Spacing="5">
+                        <TextBlock Text="Preview:" />
+                        <Border Height="60" 
+                                Background="{Binding SelectedHighlightRule.BackgroundColor, Converter={StaticResource ColorToBrushConverter}, FallbackValue=Transparent}"
+                                BorderBrush="Gray" 
+                                BorderThickness="1"
+                                Padding="10">
+                            <TextBlock Text="Preview Text"
+                                       Foreground="{Binding SelectedHighlightRule.ForegroundColor, Converter={StaticResource ColorToBrushConverter}, FallbackValue=White}"
+                                       FontSize="16"
+                                       VerticalAlignment="Center" />
+                        </Border>
                     </StackPanel>
 
                     <TextBlock Text="Rules are evaluated in list order. Higher rules take priority." 
