@@ -1,10 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:bobTail.Views"
-        x:Class="bobTail.Views.SettingsWindow"
-        Width="640"
-        Height="520"
-        Title="Settings">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:bobTail.Views" x:Class="bobTail.Views.SettingsWindow" Width="1024" Height="768" Title="Settings">
 
     <Window.Resources>
         <SolidColorBrush x:Key="DefaultWhite">#FFFFFFFF</SolidColorBrush>
@@ -32,56 +28,49 @@
     <ScrollViewer>
         <StackPanel Margin="20" Spacing="12">
 
-            <TextBlock Text="Settings"
-                       FontSize="18"
-                       FontWeight="Bold" />
+            <TextBlock Text="Settings" FontSize="18" FontWeight="Bold" />
 
             <Separator />
 
-            <CheckBox Content="Show Debug Tab"
-                      IsChecked="{Binding DebugTabVisible}" />
+            <CheckBox Content="Show Debug Tab" IsChecked="{Binding DebugTabVisible}" />
 
-            <CheckBox Content="Tail new files by default"
-                      IsChecked="{Binding DefaultTailEnabled}" />
+            <CheckBox Content="Tail new files by default" IsChecked="{Binding DefaultTailEnabled}" />
 
-            <TextBlock Text="Highlight rules"
-                       FontSize="14"
-                       FontWeight="Bold"
-                       Margin="0,10,0,0" />
+            <TextBlock Text="Highlight rules" FontSize="14" FontWeight="Bold" Margin="0,10,0,0" />
 
-            <ListBox ItemsSource="{Binding HighlightRules}"
-                     SelectedItem="{Binding SelectedHighlightRule}"
-                     Height="160">
+            <ListBox ItemsSource="{Binding HighlightRules}" SelectedItem="{Binding SelectedHighlightRule}" Height="260">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <TextBlock Text="{Binding Text}" Width="220" TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="{Binding MatchMode}" Width="90" />
-                            <Rectangle Width="90" Height="25" Fill="{Binding ForegroundColor}" Stroke="Gray" StrokeThickness="1" />
-                            <Rectangle Width="90" Height="25" Fill="{Binding BackgroundColor}" Stroke="Gray" StrokeThickness="1" />
+                            <TextBlock Text="{Binding ForegroundColor}" Width="90" />
+                            <TextBlock Text="{Binding BackgroundColor}" Width="90" />
+                            <Border Background="{Binding BackgroundColor, Converter={StaticResource ColorToBrushConverter}, FallbackValue=Transparent}" Padding="2" Width="100">
+                                <TextBlock Text="{Binding Text}" Foreground="{Binding ForegroundColor, Converter={StaticResource ColorToBrushConverter}, FallbackValue=White}" VerticalAlignment="Center" />
+                            </Border>
+
                         </StackPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
 
             <StackPanel Orientation="Horizontal" Spacing="10">
-                <Button Content="Add" Width="80" Click="AddHighlightRule_OnClick" />
-                <Button Content="Remove" Width="80" Click="RemoveHighlightRule_OnClick" />
-                <Button Content="Move Up" Width="80" Click="MoveHighlightRuleUp_OnClick" />
-                <Button Content="Move Down" Width="80" Click="MoveHighlightRuleDown_OnClick" />
+                <Button Content="Add" Width="100" Click="AddHighlightRule_OnClick" />
+                <Button Content="Remove" Width="100" Click="RemoveHighlightRule_OnClick" />
+                <Button Content="Move Up" Width="100" Click="MoveHighlightRuleUp_OnClick" />
+                <Button Content="Move Down" Width="100" Click="MoveHighlightRuleDown_OnClick" />
             </StackPanel>
 
             <Border BorderBrush="Gray" BorderThickness="1" Padding="10">
                 <StackPanel Spacing="10">
-                    <TextBlock Text="Selected rule details"
-                               FontWeight="Bold" />
+                    <TextBlock Text="Selected rule details" FontWeight="Bold" />
 
                     <TextBlock Text="Text to match" />
                     <TextBox Text="{Binding SelectedHighlightRule.Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=''}" />
 
                     <TextBlock Text="Match type" />
-                    <ComboBox ItemsSource="{Binding MatchModes}"
-                              SelectedItem="{Binding SelectedHighlightRule.MatchMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <ComboBox ItemsSource="{Binding MatchModes}" SelectedItem="{Binding SelectedHighlightRule.MatchMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding}" />
@@ -92,44 +81,28 @@
                     <StackPanel Orientation="Horizontal" Spacing="20">
                         <StackPanel Width="220">
                             <TextBlock Text="Foreground color" />
-                            <TextBox Text="{Binding SelectedHighlightRule.ForegroundColorHex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=#FFFFFFFF}" 
-                                     Watermark="#FFFFFFFF" />
+                            <TextBox Text="{Binding SelectedHighlightRule.ForegroundColorHex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=#FFFFFFFF}" Watermark="#FFFFFFFF" />
                         </StackPanel>
 
                         <StackPanel Width="220">
                             <TextBlock Text="Background color" />
-                            <TextBox Text="{Binding SelectedHighlightRule.BackgroundColorHex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=#00000000}" 
-                                     Watermark="#00000000" />
+                            <TextBox Text="{Binding SelectedHighlightRule.BackgroundColorHex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=#00000000}" Watermark="#00000000" />
                         </StackPanel>
                     </StackPanel>
 
                     <StackPanel Spacing="5">
                         <TextBlock Text="Preview:" />
-                        <Border Height="60" 
-                                Background="{Binding SelectedHighlightRule.BackgroundColor, Converter={StaticResource ColorToBrushConverter}, FallbackValue=Transparent}"
-                                BorderBrush="Gray" 
-                                BorderThickness="1"
-                                Padding="10">
-                            <TextBlock Text="Preview Text"
-                                       Foreground="{Binding SelectedHighlightRule.ForegroundColor, Converter={StaticResource ColorToBrushConverter}, FallbackValue=White}"
-                                       FontSize="16"
-                                       VerticalAlignment="Center" />
+                        <Border Height="60" Background="{Binding SelectedHighlightRule.BackgroundColor, Converter={StaticResource ColorToBrushConverter}, FallbackValue=Transparent}" BorderBrush="Gray" BorderThickness="1" Padding="10">
+                            <TextBlock Text="Preview Text" Foreground="{Binding SelectedHighlightRule.ForegroundColor, Converter={StaticResource ColorToBrushConverter}, FallbackValue=White}" FontSize="16" VerticalAlignment="Center" />
                         </Border>
                     </StackPanel>
 
-                    <TextBlock Text="Rules are evaluated in list order. Higher rules take priority." 
-                               FontStyle="Italic"
-                               Foreground="Gray" />
+                    <TextBlock Text="Rules are evaluated in list order. Higher rules take priority." FontStyle="Italic" Foreground="Gray" />
                 </StackPanel>
             </Border>
 
-            <StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Right"
-                        Margin="0,10,0,0"
-                        Spacing="10">
-                <Button Content="Close"
-                        Width="80"
-                        Click="CloseButton_OnClick" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0" Spacing="10">
+                <Button Content="Close" Width="80" Click="CloseButton_OnClick" />
             </StackPanel>
 
         </StackPanel>
