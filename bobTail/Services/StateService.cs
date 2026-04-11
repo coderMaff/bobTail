@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -89,6 +90,6 @@ public static class StateService
         public List<string> openFiles { get; set; } = new();
         public bool debugVisible { get; set; }
         public bool defaultTail { get; set; } = true;
-        public List<HighlightRuleDto>? highlightRules { get; set; } = new();
+        public ObservableCollection<HighlightRuleDto>? highlightRules { get; set; } = new();
     }
 }

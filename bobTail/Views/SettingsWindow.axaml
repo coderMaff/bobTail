@@ -1,6 +1,9 @@
 <Window xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="clr-namespace:bobTail.Views" x:Class="bobTail.Views.SettingsWindow" Width="1024" Height="768" Title="Settings">
+    xmlns:local="clr-namespace:bobTail.Views" 
+    x:Class="bobTail.Views.SettingsWindow" 
+    Width="1024" Height="768" Title="Settings"
+    >
 
     <Window.Resources>
         <SolidColorBrush x:Key="DefaultWhite">#FFFFFFFF</SolidColorBrush>
@@ -8,9 +11,6 @@
     </Window.Resources>
 
     <Window.Styles>
-        <Style Selector="ListBoxItem:nth-child(4) TextBlock">
-            <Setter Property="Foreground" Value="Orange" />
-        </Style>
         <Style Selector="ComboBox">
             <Setter Property="Foreground" Value="White" />
             <Setter Property="Background" Value="#1e1e1e" />

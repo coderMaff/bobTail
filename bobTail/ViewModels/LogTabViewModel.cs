@@ -1,3 +1,4 @@
+using System;
 using System.Collections.ObjectModel;
 using Material.Icons;
 using ReactiveUI;
@@ -58,4 +59,11 @@ public class LogTabViewModel : ViewModelBase
         get => _hasUnread;
         set => this.RaiseAndSetIfChanged(ref _hasUnread, value);
     }
+    public event Action<LogLineViewModel>? ScrollRequested;
+
+    public void ScrollIntoView(LogLineViewModel line)
+    {
+        ScrollRequested?.Invoke(line);
+    }
+
 }

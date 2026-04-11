@@ -18,6 +18,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using bobTail.Models;
 using bobTail.ViewModels;
+using Tmds.DBus.Protocol;
 
 namespace bobTail.Views;
 
@@ -276,10 +277,10 @@ public partial class MainWindow : Window
         }
 
         AppendDebug($"[DEBUG] Current extent: {_currentScrollViewer.Extent}, viewport: {_currentScrollViewer.Viewport}, offset: {_currentScrollViewer.Offset}");
-        
+
         double targetOffset = Math.Max(0, _currentScrollViewer.Extent.Height - _currentScrollViewer.Viewport.Height);
         _currentScrollViewer.Offset = new Avalonia.Vector(0, targetOffset);
-        
+
         AppendDebug($"[DEBUG] Scrolled to offset: {_currentScrollViewer.Offset}");
     }
 
@@ -296,10 +297,10 @@ public partial class MainWindow : Window
             {
                 _currentTab.PropertyChanged += Tab_PropertyChanged;
             }
-            
+
             // Reset ScrollViewer reference when tab changes
             _currentScrollViewer = null;
-            
+
             // If new tab has AutoScroll enabled, scroll to bottom
             if (_currentTab?.AutoScroll == true)
             {
@@ -344,7 +345,7 @@ public partial class MainWindow : Window
     {
         AppendDebug("[DEBUG] Top button clicked");
         EnsureScrollViewerFound();
-        
+
         if (_currentScrollViewer != null)
         {
             _currentScrollViewer.Offset = new Avalonia.Vector(0, 0);
@@ -357,6 +358,106 @@ public partial class MainWindow : Window
         AppendDebug("[DEBUG] Bottom button clicked");
         EnsureScrollViewerFound();
         ScrollToBottom();
+    }
+
+    private void FindNextButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (Vm.SelectedTab == null)
+            return;
+
+        var searchText = Vm.FindText?.Trim();
+        if (string.IsNullOrEmpty(searchText))
+            return;
+
+        var startIndex = Vm.SelectedTab.Lines.IndexOf(Vm.SelectedTab.Lines.FirstOrDefault(line => line.IsSelected)) + 1;
+        var found = Vm.SelectedTab.Lines.Skip(startIndex).FirstOrDefault(line => line.Text.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+        if (found != null)
+        {
+            found.IsSelected = true;
+            EnsureScrollViewerFound();
+            //_currentScrollViewer?.ScrollIntoView();
+            var dialog = new Window
+            {
+                Width = 300,
+                Height = 150,
+                Title = "Search",
+                Content = new TextBlock
+                {
+                    Text = "No more matches found.",
+                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
+                }
+            };
+
+            dialog.ShowDialog(this);            
+        }
+    }
+
+    private void FindPrevButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (Vm.SelectedTab == null)
+            return;
+
+        var searchText = Vm.FindText?.Trim();
+        if (string.IsNullOrEmpty(searchText))
+            return;
+
+        var lines = Vm.SelectedTab.Lines;
+        var startIndex = lines.IndexOf(lines.FirstOrDefault(line => line.IsSelected)) - 1;
+        var found = lines.Take(startIndex + 1).LastOrDefault(line => line.Text.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+        if (found != null)
+        {
+            found.IsSelected = true;
+            EnsureScrollViewerFound();
+            //_currentScrollViewer?.ScrollIntoView(found);
+            var dialog = new Window
+            {
+                Width = 300,
+                Height = 150,
+                Title = "Search",
+                Content = new TextBlock
+                {
+                    Text = "No more matches found.",
+                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
+                }
+            };
+
+            dialog.ShowDialog(this);
+
+        }
+    }
+
+    private void FilterButton_OnClick(object? sender, RoutedEventArgs e)
+    { 
+        if (Vm.SelectedTab == null)
+            return;
+
+        var filterText = Vm.FindText?.Trim();
+        if (string.IsNullOrEmpty(filterText))
+            return;
+
+        foreach (var line in Vm.SelectedTab.Lines)
+        {
+            line.IsHidden = !line.Text.Contains(filterText, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    private void SearchTextBox_OnKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            FindNextButton_OnClick(sender, e);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.F3)
+        {
+            if ((e.KeyModifiers & KeyModifiers.Shift) != 0)
+                FindPrevButton_OnClick(sender, e);
+            else
+                FindNextButton_OnClick(sender, e);
+            e.Handled = true;
+        }
     }
 
     private void SettingsButton_OnClick(object? sender, RoutedEventArgs e)

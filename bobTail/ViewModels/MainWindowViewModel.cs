@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Reactive;
 using Material.Icons;
 using ReactiveUI;
 
@@ -8,6 +9,8 @@ public class MainWindowViewModel : ViewModelBase
 {
     public ObservableCollection<LogTabViewModel> Tabs { get; } = new();
     public ObservableCollection<HighlightRule> HighlightRules { get; } = new();
+    public ReactiveCommand<Unit, Unit> FindNextCommand { get; }
+
 
     public string[] MatchModes { get; } =
     {
@@ -52,6 +55,7 @@ public class MainWindowViewModel : ViewModelBase
 
         Tabs.Add(DebugTab);
         SelectedTab = DebugTab;
+        //FindNextCommand = ReactiveCommand.Create(FindNext);
     }
 
     private bool _debugTabVisible = true;
@@ -85,4 +89,19 @@ public class MainWindowViewModel : ViewModelBase
                 Tabs.Remove(DebugTab);
         }
     }
+
+    private string? _findText;
+    public string? FindText
+    {
+        get => _findText;
+        set => this.RaiseAndSetIfChanged(ref _findText, value);
+    }
+
+    private string? _filterText;
+    public string? FilterText
+    {
+        get => _filterText;
+        set => this.RaiseAndSetIfChanged(ref _filterText, value);
+    }
+
 }
