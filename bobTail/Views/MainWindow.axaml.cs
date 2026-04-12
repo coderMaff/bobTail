@@ -360,76 +360,88 @@ public partial class MainWindow : Window
         ScrollToBottom();
     }
 
-    private void FindNextButton_OnClick(object? sender, RoutedEventArgs e)
+    private void ScrollToLine(LogLineViewModel line)
+    {
+        var listBox = this.FindDescendantOfType<ListBox>();
+        if (listBox == null)
+            return;
+
+        var index = listBox.Items?.IndexOf(line) ?? -1;
+        if (index < 0)
+            return;
+
+        EnsureScrollViewerFound();
+        if (_currentScrollViewer == null)
+            return;
+
+        // Height of one item (approx)
+        double itemHeight = 20; // adjust if needed or measure dynamically
+
+        double targetOffset = index * itemHeight;
+
+        _currentScrollViewer.Offset = new Avalonia.Vector(0, targetOffset);
+    }
+
+    private void FindCore(bool forward)
     {
         if (Vm.SelectedTab == null)
             return;
 
         var searchText = Vm.FindText?.Trim();
-        if (string.IsNullOrEmpty(searchText))
+        if (string.IsNullOrWhiteSpace(searchText))
             return;
 
-        var startIndex = Vm.SelectedTab.Lines.IndexOf(Vm.SelectedTab.Lines.FirstOrDefault(line => line.IsSelected)) + 1;
-        var found = Vm.SelectedTab.Lines.Skip(startIndex).FirstOrDefault(line => line.Text.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+        var lines = Vm.SelectedTab.Lines;
+
+        // Find current selection index
+        var currentIndex = lines
+            .Select((line, index) => new { line, index })
+            .FirstOrDefault(x => x.line.IsSelected)?.index ?? -1;
+
+        int startIndex = forward ? currentIndex + 1 : currentIndex - 1;
+
+        LogLineViewModel? found = null;
+
+        if (forward)
+        {
+            found = lines
+                .Skip(startIndex)
+                .FirstOrDefault(l => l.Text.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+        }
+        else
+        {
+            found = lines
+                .Take(startIndex + 1)
+                .LastOrDefault(l => l.Text.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+        }
+
         if (found != null)
         {
-            found.IsSelected = true;
-            EnsureScrollViewerFound();
-            //_currentScrollViewer?.ScrollIntoView();
-            var dialog = new Window
-            {
-                Width = 300,
-                Height = 150,
-                Title = "Search",
-                Content = new TextBlock
-                {
-                    Text = "No more matches found.",
-                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
-                }
-            };
+            AppendDebug($"[DEBUG] Found {(forward ? "next" : "previous")} match for '{searchText}' at line index {lines.IndexOf(found)}");
+            foreach (var l in lines)
+                l.IsSelected = false;
 
-            dialog.ShowDialog(this);            
+            found.IsSelected = true;
+            //Vm.SelectedTab.RequestScrollToLine(found);
+            ScrollToLine(found);
+        } else
+        {
+            AppendDebug($"[DEBUG] Find {(forward ? "next" : "previous")} for '{searchText}' not found.");
         }
+    }
+
+    private void FindNextButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        FindCore(true);
     }
 
     private void FindPrevButton_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (Vm.SelectedTab == null)
-            return;
-
-        var searchText = Vm.FindText?.Trim();
-        if (string.IsNullOrEmpty(searchText))
-            return;
-
-        var lines = Vm.SelectedTab.Lines;
-        var startIndex = lines.IndexOf(lines.FirstOrDefault(line => line.IsSelected)) - 1;
-        var found = lines.Take(startIndex + 1).LastOrDefault(line => line.Text.Contains(searchText, StringComparison.OrdinalIgnoreCase));
-        if (found != null)
-        {
-            found.IsSelected = true;
-            EnsureScrollViewerFound();
-            //_currentScrollViewer?.ScrollIntoView(found);
-            var dialog = new Window
-            {
-                Width = 300,
-                Height = 150,
-                Title = "Search",
-                Content = new TextBlock
-                {
-                    Text = "No more matches found.",
-                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
-                }
-            };
-
-            dialog.ShowDialog(this);
-
-        }
+        FindCore(false);
     }
 
     private void FilterButton_OnClick(object? sender, RoutedEventArgs e)
-    { 
+    {
         if (Vm.SelectedTab == null)
             return;
 

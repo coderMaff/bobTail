@@ -1,4 +1,6 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Reactive;
 using Material.Icons;
 using ReactiveUI;
@@ -10,6 +12,7 @@ public class MainWindowViewModel : ViewModelBase
     public ObservableCollection<LogTabViewModel> Tabs { get; } = new();
     public ObservableCollection<HighlightRule> HighlightRules { get; } = new();
     public ReactiveCommand<Unit, Unit> FindNextCommand { get; }
+    public ReactiveCommand<Unit, Unit> FindPrevCommand { get; }
 
 
     public string[] MatchModes { get; } =
@@ -55,7 +58,6 @@ public class MainWindowViewModel : ViewModelBase
 
         Tabs.Add(DebugTab);
         SelectedTab = DebugTab;
-        //FindNextCommand = ReactiveCommand.Create(FindNext);
     }
 
     private bool _debugTabVisible = true;
@@ -103,5 +105,41 @@ public class MainWindowViewModel : ViewModelBase
         get => _filterText;
         set => this.RaiseAndSetIfChanged(ref _filterText, value);
     }
+
+    public ReactiveCommand<Unit, Unit> FilterCommand { get; }
+
+    private bool _isFilterActive;
+    public bool IsFilterActive
+    {
+        get => _isFilterActive;
+        set => this.RaiseAndSetIfChanged(ref _isFilterActive, value);
+    }
+
+
+
+
+    private void FilterLines()
+    {
+        if (SelectedTab == null)
+            return;
+
+        var searchText = FindText?.Trim();
+        if (string.IsNullOrWhiteSpace(searchText))
+            return;
+
+        IsFilterActive = !IsFilterActive;
+
+        if (IsFilterActive)
+        {
+            SelectedTab.FilteredLines = new ObservableCollection<LogLineViewModel>(
+                SelectedTab.Lines.Where(line =>
+                    line.Text.Contains(searchText, StringComparison.OrdinalIgnoreCase)));
+        }
+        else
+        {
+            SelectedTab.FilteredLines = new ObservableCollection<LogLineViewModel>(SelectedTab.Lines);
+        }
+    }
+
 
 }

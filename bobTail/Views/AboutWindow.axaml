@@ -16,6 +16,11 @@
         <TextBlock Text="bobTail (c) 2026 by Matt Bushell. All rights reserved."
                    FontSize="18" />
 
+        <Image Source="avares://bobTail/Assets/Images/bobTailLogo.png"
+               Width="500"
+               Height="250"
+               Stretch="Uniform"/>
+
         <StackPanel Orientation="Horizontal"
                     HorizontalAlignment="Right"
                     Margin="0,20,0,0"

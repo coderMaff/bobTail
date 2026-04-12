@@ -59,11 +59,33 @@ public class LogTabViewModel : ViewModelBase
         get => _hasUnread;
         set => this.RaiseAndSetIfChanged(ref _hasUnread, value);
     }
+
+    // -------------------------------
+    // SCROLL REQUEST EVENT (correct)
+    // -------------------------------
     public event Action<LogLineViewModel>? ScrollRequested;
 
-    public void ScrollIntoView(LogLineViewModel line)
+    public void RequestScrollToLine(LogLineViewModel line)
     {
         ScrollRequested?.Invoke(line);
     }
 
+    // -------------------------------
+    // FILTERED LINES
+    // -------------------------------
+    private ObservableCollection<LogLineViewModel> _filteredLines = new();
+    public ObservableCollection<LogLineViewModel> FilteredLines
+    {
+        get => _filteredLines;
+        set => this.RaiseAndSetIfChanged(ref _filteredLines, value);
+    }
+
+    // -------------------------------
+    // CONSTRUCTOR
+    // -------------------------------
+    public LogTabViewModel()
+    {
+        // Default: show all lines
+        FilteredLines = Lines;
+    }
 }
