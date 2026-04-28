@@ -36,6 +36,8 @@
 
             <CheckBox Content="Tail new files by default" IsChecked="{Binding DefaultTailEnabled}" />
 
+            <CheckBox Content="Show line numbers" IsChecked="{Binding LineNumbersVisible}" />
+
             <TextBlock Text="Highlight rules" FontSize="14" FontWeight="Bold" Margin="0,10,0,0" />
 
             <ListBox ItemsSource="{Binding HighlightRules}" SelectedItem="{Binding SelectedHighlightRule}" Height="260">

@@ -59,7 +59,6 @@ public class LogTabViewModel : ViewModelBase
         get => _hasUnread;
         set => this.RaiseAndSetIfChanged(ref _hasUnread, value);
     }
-
     // -------------------------------
     // SCROLL REQUEST EVENT (correct)
     // -------------------------------

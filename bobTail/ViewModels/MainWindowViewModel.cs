@@ -115,6 +115,27 @@ public class MainWindowViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _isFilterActive, value);
     }
 
+    private string? _findResults = "0/0";
+    public string? FindResults
+    {
+        get => _findResults;
+        set => this.RaiseAndSetIfChanged(ref _findResults, value);
+    }
+
+    private int _currentFindIndex = -1;
+    public int CurrentFindIndex
+    {
+        get => _currentFindIndex;
+        set => this.RaiseAndSetIfChanged(ref _currentFindIndex, value);
+    }
+
+    private bool _lineNumbersVisible = true;
+    public bool LineNumbersVisible
+    {
+        get => _lineNumbersVisible;
+        set => this.RaiseAndSetIfChanged(ref _lineNumbersVisible, value);
+    }
+
 
 
 

@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:bobTail.ViewModels"
+        xmlns:local="clr-namespace:bobTail.Views"
         xmlns:material="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia" x:Class="bobTail.Views.MainWindow" Background="#222222" Title="bobTail logfile viewer (c)2026 Matt Bushell">
 
     <Window.Styles>
@@ -9,6 +10,11 @@
             <Setter Property="Padding" Value="0" />
             <Setter Property="Margin" Value="0" />
             <Setter Property="MinHeight" Value="0" />
+        </Style>
+
+        <!-- Hide filtered lines -->
+        <Style Selector="ListBoxItem">
+            <Setter Property="IsVisible" Value="{Binding IsHidden, Converter={x:Static local:BoolNotConverter.Instance}}"/>
         </Style>
 
         <Style Selector="ListBox TextBlock">
@@ -30,13 +36,14 @@
             <Setter Property="Padding" Value="4,2" />
         </Style>
 
-        <Style Selector="ListBoxItem">
+        <Style Selector="ListBoxItem Border TextBlock">
             <Setter Property="FontStyle" Value="Normal"/>
         </Style>
 
-        <Style Selector="ListBoxItem:selected">
+        <Style Selector="ListBoxItem:selected Border TextBlock">
             <Setter Property="FontStyle" Value="Italic"/>
         </Style>
+
 
 
     </Window.Styles>
@@ -71,16 +78,17 @@
             <Button Grid.Row="0" Grid.Column="1" Content="About" Width="120" Click="AboutButton_OnClick"/>
             <Separator Grid.Row="0" Grid.Column="2" Width="20"/>
             <Button Grid.Row="0" Grid.Column="3" Content="Top" Width="120" Click="TopButton_OnClick"/>
-            <Separator Grid.Row="0" Grid.Column="4" Width="20"/>
-            <Button Grid.Row="0" Grid.Column="5" Content="Find Next" Width="120" Click="FindNextButton_OnClick"/>
-            <Button Grid.Row="0" Grid.Column="6" Content="Find Prev" Width="120" Click="FindPrevButton_OnClick"/>
+            <Separator Grid.Row="0" Grid.Column="4" Width="20"/>            
+            <Button Grid.Row="0" Grid.Column="5" Content="Find Prev" Width="120" Click="FindPrevButton_OnClick"/>
+            <Button Grid.Row="0" Grid.Column="6" Content="Find Next" Width="120" Click="FindNextButton_OnClick"/>
             <TextBox Grid.Row="0" Grid.Column="7" Text="{Binding FindText}" Watermark="Search..." Width="300"/>
+            <TextBox Grid.Row="0" Grid.Column="8" Text="{Binding FindResults}" Watermark="0/0" Width="100"/>
 
             <Image Source="avares://bobTail/Assets/Images/bobTailLogo.png"
                    Width="300"
                    Height="75"
                    Stretch="Fill"
-                   Grid.Row="0" Grid.Column="8" Grid.RowSpan="2"/>
+                   Grid.Row="0" Grid.Column="9" Grid.RowSpan="2"/>
 
             <!-- Row 1 (every second element) -->
 
@@ -115,12 +123,35 @@
 
             <TabControl.ContentTemplate>
                 <DataTemplate DataType="vm:LogTabViewModel">
-                    <ListBox ItemsSource="{Binding Lines}" FontFamily="Consolas" Background="DeepSkyBlue" ScrollViewer.ScrollChanged="LogList_OnScrollChanged">
+                    <ListBox ItemsSource="{Binding Lines}" FontFamily="Consolas" Background="#C5C5C5" ScrollViewer.ScrollChanged="LogList_OnScrollChanged">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Text, Mode=OneWay}" Foreground="{Binding Foreground, Mode=OneWay}" Background="{Binding Background, Mode=OneWay}" FontFamily="Consolas" Padding="0" Height="18"/>
+                                <StackPanel Orientation="Horizontal" Spacing="0">
+                                    <!-- Line Number -->
+                                    <TextBlock 
+                                        Text="{Binding LineNumber, Mode=OneWay}"
+                                        Foreground="#000000"
+                                        FontFamily="Courier New"
+                                        FontSize="13"
+                                        Padding="2,0,5,0"
+                                        Height="18"
+                                        IsVisible="{Binding DataContext.LineNumbersVisible, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                                        VerticalAlignment="Center"
+                                        MinWidth="50"
+                                        TextAlignment="Right"/>
+                                    <!-- Log Text -->
+                                    <TextBlock 
+                                        Text="{Binding Text, Mode=OneWay}" 
+                                        Foreground="{Binding Foreground, Mode=OneWay}" 
+                                        Background="{Binding Background, Mode=OneWay}" 
+                                        FontFamily="Consolas" 
+                                        FontStyle="{Binding $parent[ListBoxItem].FontStyle}"
+                                        Padding="0" 
+                                        Height="18"
+                                        VerticalAlignment="Center"/>
+                                </StackPanel>
                             </DataTemplate>
-                        </ListBox.ItemTemplate>
+                        </ListBox.ItemTemplate> 
                     </ListBox>
                 </DataTemplate>
             </TabControl.ContentTemplate>

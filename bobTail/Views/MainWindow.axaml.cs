@@ -60,6 +60,7 @@ public partial class MainWindow : Window
         {
             Vm.DebugTabVisible = state.Value.debugVisible;
             Vm.DefaultTailEnabled = state.Value.defaultTail;
+            Vm.LineNumbersVisible = state.Value.lineNumbersVisible;
 
             foreach (var rule in state.Value.highlightRules)
                 Vm.HighlightRules.Add(rule);
@@ -74,6 +75,7 @@ public partial class MainWindow : Window
         {
             Vm.DebugTabVisible = true;
             Vm.DefaultTailEnabled = true;
+            Vm.LineNumbersVisible = true;
         }
 
         SubscribeToHighlightRuleChanges();
@@ -143,6 +145,7 @@ public partial class MainWindow : Window
         foreach (var line in lastLines)
         {
             var highlighted = CreateHighlightedLine(line, tab.FilePath);
+            highlighted.LineNumber = tab.Lines.Count + 1;
             tab.Lines.Add(highlighted);
         }
 
@@ -195,9 +198,16 @@ public partial class MainWindow : Window
 
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                tab.Lines.Add(CreateHighlightedLine(captured, tab.FilePath));
+                var highlighted = CreateHighlightedLine(captured, tab.FilePath);
+                highlighted.LineNumber = tab.Lines.Count + 1;
+                tab.Lines.Add(highlighted);
                 if (tab.Lines.Count > 2000)
+                {
                     tab.Lines.RemoveAt(0);
+                    // Shift line numbers down
+                    for (int i = 0; i < tab.Lines.Count; i++)
+                        tab.Lines[i].LineNumber = i + 1;
+                }
 
                 if (Vm.SelectedTab != tab && !tab.AutoScroll)
                     tab.HasUnread = true;
@@ -262,8 +272,18 @@ public partial class MainWindow : Window
 
         Dispatcher.UIThread.Post(() =>
         {
+            // Insert older lines at the beginning and renumber everything
+            int insertIndex = 0;
             foreach (var line in older)
-                tab.Lines.Insert(0, CreateHighlightedLine(line, tab.FilePath));
+            {
+                var highlighted = CreateHighlightedLine(line, tab.FilePath);
+                tab.Lines.Insert(insertIndex, highlighted);
+                insertIndex++;
+            }
+            
+            // Renumber all lines
+            for (int i = 0; i < tab.Lines.Count; i++)
+                tab.Lines[i].LineNumber = i + 1;
         });
     }
 
@@ -389,45 +409,72 @@ public partial class MainWindow : Window
 
         var searchText = Vm.FindText?.Trim();
         if (string.IsNullOrWhiteSpace(searchText))
+        {
+            Vm.FindResults = "0/0";
+            Vm.CurrentFindIndex = -1;
             return;
+        }
 
         var lines = Vm.SelectedTab.Lines;
+
+        // Find all matches
+        var allMatches = lines
+            .Select((line, index) => new { line, index })
+            .Where(x => x.line.Text.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (allMatches.Count == 0)
+        {
+            Vm.FindResults = "0/0";
+            Vm.CurrentFindIndex = -1;
+            AppendDebug($"[DEBUG] Find for '{searchText}' not found.");
+            return;
+        }
 
         // Find current selection index
         var currentIndex = lines
             .Select((line, index) => new { line, index })
             .FirstOrDefault(x => x.line.IsSelected)?.index ?? -1;
 
-        int startIndex = forward ? currentIndex + 1 : currentIndex - 1;
-
-        LogLineViewModel? found = null;
-
+        int nextMatchIndex = -1;
         if (forward)
         {
-            found = lines
-                .Skip(startIndex)
-                .FirstOrDefault(l => l.Text.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+            nextMatchIndex = allMatches.FindIndex(x => x.index > currentIndex);
+            if (nextMatchIndex < 0)
+                nextMatchIndex = 0; // Wrap around to first
         }
         else
         {
-            found = lines
-                .Take(startIndex + 1)
-                .LastOrDefault(l => l.Text.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+            nextMatchIndex = allMatches.FindLastIndex(x => x.index < currentIndex);
+            if (nextMatchIndex < 0)
+                nextMatchIndex = allMatches.Count - 1; // Wrap around to last
         }
 
-        if (found != null)
-        {
-            AppendDebug($"[DEBUG] Found {(forward ? "next" : "previous")} match for '{searchText}' at line index {lines.IndexOf(found)}");
-            foreach (var l in lines)
-                l.IsSelected = false;
+        var found = allMatches[nextMatchIndex].line;
 
-            found.IsSelected = true;
-            //Vm.SelectedTab.RequestScrollToLine(found);
-            ScrollToLine(found);
-        } else
+        AppendDebug($"[DEBUG] Found {(forward ? "next" : "previous")} match for '{searchText}' at line index {lines.IndexOf(found)}");
+        Vm.SelectedTab.AutoScroll = false;
+        
+        foreach (var l in lines)
         {
-            AppendDebug($"[DEBUG] Find {(forward ? "next" : "previous")} for '{searchText}' not found.");
+            l.IsSelected = false;
+            l.IsSearchResult = false;
         }
+
+        found.IsSelected = true;
+        found.IsSearchResult = true;
+        
+        // Select the item in the ListBox to show the highlight bar
+        var listBox = this.FindDescendantOfType<ListBox>();
+        if (listBox != null)
+        {
+            listBox.SelectedItem = found;
+        }
+        
+        Vm.CurrentFindIndex = nextMatchIndex + 1; // 1-based for display
+        Vm.FindResults = $"{nextMatchIndex + 1}/{allMatches.Count}";
+        
+        ScrollToLine(found);
     }
 
     private void FindNextButton_OnClick(object? sender, RoutedEventArgs e)
@@ -443,15 +490,47 @@ public partial class MainWindow : Window
     private void FilterButton_OnClick(object? sender, RoutedEventArgs e)
     {
         if (Vm.SelectedTab == null)
-            return;
-
-        var filterText = Vm.FindText?.Trim();
-        if (string.IsNullOrEmpty(filterText))
-            return;
-
-        foreach (var line in Vm.SelectedTab.Lines)
         {
-            line.IsHidden = !line.Text.Contains(filterText, StringComparison.OrdinalIgnoreCase);
+            AppendDebug("[DEBUG] FilterButton_OnClick: SelectedTab is null");
+            return;
+        }
+
+        var filterText = Vm.FilterText?.Trim();
+        AppendDebug($"[DEBUG] FilterButton_OnClick: filterText='{filterText}'");
+        
+        if (string.IsNullOrEmpty(filterText))
+        {
+            AppendDebug("[DEBUG] FilterButton_OnClick: filterText is empty");
+            return;
+        }
+
+        Vm.IsFilterActive = !Vm.IsFilterActive;
+        AppendDebug($"[DEBUG] FilterButton_OnClick: IsFilterActive toggled to {Vm.IsFilterActive}");
+
+        if (Vm.IsFilterActive)
+        {
+            // Hide non-matching lines
+            int hiddenCount = 0;
+            int visibleCount = 0;
+            foreach (var line in Vm.SelectedTab.Lines)
+            {
+                bool matches = line.Text.Contains(filterText, StringComparison.OrdinalIgnoreCase);
+                line.IsHidden = !matches;
+                if (!matches)
+                    hiddenCount++;
+                else
+                    visibleCount++;
+            }
+            AppendDebug($"[DEBUG] Filter activated for '{filterText}': {hiddenCount} hidden, {visibleCount} visible");
+        }
+        else
+        {
+            // Show all lines
+            foreach (var line in Vm.SelectedTab.Lines)
+            {
+                line.IsHidden = false;
+            }
+            AppendDebug($"[DEBUG] Filter deactivated - showing all {Vm.SelectedTab.Lines.Count} lines");
         }
     }
 
@@ -566,7 +645,9 @@ public partial class MainWindow : Window
 
     private void AppendDebug(string message)
     {
-        Vm.DebugTab.Lines.Add(CreateHighlightedLine(message, null));
+        var highlighted = CreateHighlightedLine(message, null);
+        highlighted.LineNumber = Vm.DebugTab.Lines.Count + 1;
+        Vm.DebugTab.Lines.Add(highlighted);
         _debugLogWriter?.WriteLine(message);
         _debugLogWriter?.Flush();
     }
@@ -688,7 +769,8 @@ public partial class MainWindow : Window
             Vm.Tabs,
             Vm.DebugTabVisible,
             Vm.DefaultTailEnabled,
-            Vm.HighlightRules
+            Vm.HighlightRules,
+            Vm.LineNumbersVisible
         );
     }
 }

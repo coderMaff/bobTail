@@ -1,3 +1,4 @@
+using System;
 using Avalonia.Media;
 using ReactiveUI;
 
@@ -39,7 +40,12 @@ public class LogLineViewModel : ViewModelBase
     public bool IsSelected
     {
         get => _isSelected;
-        set => this.RaiseAndSetIfChanged(ref _isSelected, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _isSelected, value);
+            Console.WriteLine($"LogLineViewModel: IsSelected changed to {value} for line '{Text}'");
+        }
+        
     }
 
     private bool _isHidden;
@@ -47,6 +53,20 @@ public class LogLineViewModel : ViewModelBase
     {
         get => _isHidden;
         set => this.RaiseAndSetIfChanged(ref _isHidden, value);
+    }
+
+    private bool _isSearchResult;
+    public bool IsSearchResult
+    {
+        get => _isSearchResult;
+        set => this.RaiseAndSetIfChanged(ref _isSearchResult, value);
+    }
+
+    private int _lineNumber;
+    public int LineNumber
+    {
+        get => _lineNumber;
+        set => this.RaiseAndSetIfChanged(ref _lineNumber, value);
     }
 
 }
