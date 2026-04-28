@@ -48,6 +48,8 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
+
+
         InitializeComponent();
 
         var args = Environment.GetCommandLineArgs();
@@ -76,9 +78,21 @@ public partial class MainWindow : Window
             Vm.DebugTabVisible = true;
             Vm.DefaultTailEnabled = true;
             Vm.LineNumbersVisible = true;
+
+              // ADD THESE DEFAULT RULES
+            Vm.HighlightRules.Add(new HighlightRule
+            {
+                Text = "MATCH ME!",
+                MatchMode = HighlightRule.Exact,
+                ForegroundColor = Colors.Pink,
+                BackgroundColor = Colors.Yellow
+            });
         }
 
         SubscribeToHighlightRuleChanges();
+
+        AppendDebug($"[DEBUG] BaseDirectory = {AppDomain.CurrentDomain.BaseDirectory}");
+        AppendDebug($"[DEBUG] CurrentDirectory = {Directory.GetCurrentDirectory()}");
 
         Vm.PropertyChanged += Vm_PropertyChanged;
         // Initialize current tab

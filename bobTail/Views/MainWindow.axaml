@@ -114,9 +114,9 @@
 
                         <TextBlock Text="{Binding Title}" Classes.unread="{Binding HasUnread}" />
 
-                        <ToggleButton Content="T" x:Name="TailToggle" IsChecked="{Binding AutoScroll}" Width="18" Height="30" Margin="6,0,0,0" ToolTip.Tip="Tail (auto-scroll)" Background="black"/>
+                        <ToggleButton Content="T" x:Name="TailToggle" IsChecked="{Binding AutoScroll}" Padding="0" Width="18" Height="30" Margin="6,0,0,0" ToolTip.Tip="Tail (auto-scroll)" Background="black"/>
 
-                        <Button Content="X" Margin="6,0,0,0" Padding="0" Width="18" Height="30" Click="CloseTab_OnClick" CommandParameter="{Binding}" Background="red" />
+                        <Button Content="X" Margin="6,0,0,0" Padding="0" Width="18" Height="30" Click="CloseTab_OnClick" CommandParameter="{Binding}" Background="red" ToolTip.Tip="Close tab"/>
                     </StackPanel>
                 </DataTemplate>
             </TabControl.ItemTemplate>

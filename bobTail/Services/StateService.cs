@@ -15,7 +15,7 @@ public static class StateService
         Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "bobTail",
-            "open_logs.json");
+            "settings.json");
 
     public static void SaveState(
         IEnumerable<LogTabViewModel> tabs,
@@ -24,7 +24,7 @@ public static class StateService
         IEnumerable<HighlightRule> highlightRules,
         bool lineNumbersVisible = true)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(StatePath)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(StatePath)!);        
 
         var state = new
         {
@@ -49,13 +49,17 @@ public static class StateService
 
     public static (List<string> files, bool debugVisible, bool defaultTail, bool lineNumbersVisible, List<HighlightRule> highlightRules)? LoadState()
     {
+
+
+
+
         if (!File.Exists(StatePath))
             return null;
 
         try
         {
             var json = File.ReadAllText(StatePath);
-            var state = JsonSerializer.Deserialize<StateModel>(json);
+            var state = JsonSerializer.Deserialize<StateModel>(json);            
 
             var rules = state?.highlightRules?.Select(r => new HighlightRule
             {
@@ -73,8 +77,15 @@ public static class StateService
                 rules
             );
         }
-        catch
+        catch (Exception ex)
         {
+            var debugPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"state_debug.txt");
+            File.AppendAllText(debugPath,
+                $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] ERROR in LoadState()\n" +
+                $"StatePath: {StatePath}\n" +
+                $"Message: {ex.Message}\n" +
+                $"Type: {ex.GetType().FullName}\n" +
+                $"Stack:\n{ex.StackTrace}\n\n");
             // Return null if there's any deserialization error, will start fresh
             return null;
         }
